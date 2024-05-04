@@ -64,13 +64,3 @@ body {
 		inset 0 0 0 1px red,
 		inset 0 0 0 2px black;
 }
-
-html {
-	--color-primary: #4651e6;
-}
-
-@layer components {
-	.visualization {
-		@apply flex flex-col gap-2 rounded-xl bg-white/5 p-4;
-	}
-}

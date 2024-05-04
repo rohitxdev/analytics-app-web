@@ -5,11 +5,11 @@ export const Switch = ({
 	...props
 }: SwitchProps & React.RefAttributes<HTMLLabelElement>) => {
 	return (
-		<AriaSwitch className={[className, 'inline-block'].join(' ')} {...props}>
+		<AriaSwitch className={`inline-block ${className}`} {...props}>
 			{({ isSelected }) => (
 				<div
 					className={`box-content w-11 cursor-pointer rounded-full border border-white/20 bg-black duration-100 ${
-						isSelected && 'bg-primary/90'
+						isSelected && 'bg-indigo-600'
 					} `}
 				>
 					<div

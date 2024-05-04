@@ -7,17 +7,29 @@ export default {
 	theme: {
 		extend: {
 			fontFamily: {
-				poppins: 'Poppins, system-ui',
-				'space-grotesk': 'Space Grotesk, sans-serif',
+				inter: 'Inter, sans-serif',
+				rubik: 'Rubik, sans-serif',
 			},
 			fontSize: {
 				'2xs': '0.65rem',
 			},
 			colors: {
-				dark: '#101323',
-				primary: '#00B389',
-				white: '#FBFBFB',
-				'pure-white': '#FFFFFF',
+				dark: '#0E0E11',
+				light: '#F4F5F8',
+				secondary: '#D6FFF6',
+				eucalyptus: {
+					'50': '#edfff8',
+					'100': '#d4ffef',
+					'200': '#acffe1',
+					'300': '#6bffcc',
+					'400': '#24ffaf',
+					'500': '#00ef91',
+					'600': '#00c775',
+					'700': '#009b5f',
+					'800': '#028556',
+					'900': '#046343',
+					'950': '#003823',
+				},
 			},
 		},
 	},

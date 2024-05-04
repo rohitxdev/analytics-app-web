@@ -1,7 +1,16 @@
 {
-	"include": ["env.d.ts", "**/*.ts", "**/*.tsx", "server.js"],
+	"include": [
+		"env.d.ts",
+		"**/*.ts",
+		"**/*.tsx",
+		"server.js"
+	],
 	"compilerOptions": {
-		"lib": ["DOM", "DOM.Iterable", "ES2022"],
+		"lib": [
+			"DOM",
+			"DOM.Iterable",
+			"ES2022"
+		],
 		"isolatedModules": true,
 		"esModuleInterop": true,
 		"jsx": "react-jsx",
@@ -16,9 +25,10 @@
 		"noUncheckedIndexedAccess": true,
 		"baseUrl": ".",
 		"paths": {
-			"~/*": ["./app/*"]
+			"~/*": [
+				"./app/*"
+			]
 		},
-		// Vite takes care of building everything, not tsc.
 		"noEmit": true
 	}
 }

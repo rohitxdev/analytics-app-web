@@ -8,9 +8,11 @@
 		"build": "remix vite:build",
 		"lint": "eslint --ignore-path .gitignore --cache --cache-location ./node_modules/.cache/eslint .",
 		"start": "cross-env NODE_ENV=production node --env-file=.env ./server.js",
-		"precommit": "time ( tsc && pnpm lint && npx prettier . --ignore-unknown --write )"
+		"precommit": "tsc && pnpm lint && npx prettier . --ignore-unknown --write"
 	},
 	"dependencies": {
+		"@internationalized/date": "^3.5.2",
+		"@radix-ui/themes": "^3.0.2",
 		"@remix-run/express": "^2.7.1",
 		"@remix-run/node": "^2.7.1",
 		"@remix-run/react": "^2.7.1",
@@ -26,7 +28,9 @@
 		"react-aria-components": "^1.1.1",
 		"react-chartjs-2": "^5.2.0",
 		"react-dom": "^18.2.0",
+		"react-hot-toast": "^2.4.1",
 		"react-icons": "^5.0.1",
+		"recharts": "^2.12.4",
 		"remix-utils": "7.0.0-pre.7",
 		"tailwind-merge": "^2.2.1",
 		"tailwind-variants": "^0.2.0",

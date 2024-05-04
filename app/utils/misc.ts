@@ -99,3 +99,53 @@ export const getRelativeTimeString = (date: Date | number) => {
 };
 
 export const timeFormatter = new Intl.DateTimeFormat(locale, { timeStyle: 'short' });
+
+export const getFaviconUrl = (domain: string, size?: number) => {
+	const url = new URL('https://www.google.com/s2/favicons');
+	url.searchParams.set('domain', domain);
+	url.searchParams.set('sz', (size ? size : 40).toString(10));
+	return url.toString();
+};
+
+interface Domain {
+	subDomain?: string;
+	domainName: string;
+	tld: string;
+	fullDomain: string;
+}
+
+export const parseDomain = (text: string): Domain => {
+	let domain = text;
+	if (text.startsWith('http://') || text.startsWith('https://')) {
+		domain = new URL(text).hostname;
+	}
+	const parts = domain.split('.');
+	switch (parts.length) {
+		case 3:
+			return {
+				domainName: parts[1]!,
+				tld: parts[2]!,
+				fullDomain: domain,
+			};
+		case 2:
+			return {
+				domainName: parts[0]!,
+				tld: parts[1]!,
+				fullDomain: domain,
+			};
+		default:
+			if (parts.length > 3) {
+				return {
+					subDomain: parts.slice(0, -2).join('.'),
+					domainName: parts.at(-2)!,
+					tld: parts.at(-1)!,
+					fullDomain: domain,
+				};
+			}
+			return {
+				domainName: domain,
+				tld: domain,
+				fullDomain: domain,
+			};
+	}
+};

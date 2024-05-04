@@ -54,7 +54,7 @@ export default function Route() {
 					type="submit"
 					name="token"
 					value={data.token}
-					className="mt-2 rounded-lg bg-primary text-lg font-semibold"
+					className="mt-2 rounded-lg bg-indigo-600 text-lg font-semibold"
 				>
 					Submit
 				</Button>

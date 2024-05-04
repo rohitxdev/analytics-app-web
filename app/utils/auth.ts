@@ -44,8 +44,7 @@ export const exchangeCodeForToken = async (code: string, redirectUri: string) =>
 export const exchangeTokenForUserInfo = async (token: string) => {
 	try {
 		const res = await fetch(`https://www.googleapis.com/oauth2/v2/userinfo?access_token=${token}`);
-		const data = await res.json();
-		return data;
+		return await res.json();
 	} catch (err) {
 		console.log(err);
 		return null;

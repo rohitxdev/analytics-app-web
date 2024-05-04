@@ -19,11 +19,13 @@ const connectToDb = async () => {
 		await mongoClient.connect();
 		console.log('connected to mongodb successfully ✔');
 	} catch (error) {
+		console.error(error);
 		console.error('could not connect to mongodb. Trying again...');
 		await connectToDb();
 	}
 };
 
+console.log('connecting to mongodb...');
 await connectToDb();
 
 const db = mongoClient.db('app_db');

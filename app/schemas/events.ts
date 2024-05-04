@@ -45,3 +45,8 @@ export const projectSchema = z.object({
 	shouldMonitorUpTime: z.boolean(),
 	ownerId: z.string(),
 });
+
+export const keyValueSchema = z.object({
+	key: z.string(),
+	value: z.string(),
+});

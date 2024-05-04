@@ -8,7 +8,7 @@ export const googleUserSchema = z.object({
 	given_name: z.string().min(1),
 	family_name: z.string().min(1),
 	picture: z.string().min(1),
-	locale: z.string().min(1),
+	locale: z.string().min(1).optional(),
 });
 
 export const reportFrequencySchema = z.enum(['off', 'daily', 'weekly', 'monthly']);
@@ -17,6 +17,7 @@ export const userPreferencesSchema = z.object({
 	shouldSendEmailReports: z.boolean(),
 	errorReportsFrequency: reportFrequencySchema,
 	analyticsReportsFrequency: reportFrequencySchema,
+	graphAnimationsEnabled: z.boolean(),
 });
 
 export const subscriptionPlanSchema = z.enum(['basic', 'pro']).nullish();

@@ -1,36 +1,70 @@
 import { useState } from 'react';
-import { Key, Tab, TabList, Tabs } from 'react-aria-components';
+import { Key } from 'react-aria-components';
 
 import { TimePeriod } from '~/utils/misc';
 
+import { DateRangePicker } from '../react-aria/DateRangePicker';
+import { Select, SelectItem } from '../react-aria/Select';
+
 const validTimePeriods: TimePeriod[] = ['24h', '7d', '1m', '6m', '1y'];
 
-const getIsValidTimePeriod = (timePeriod: unknown): timePeriod is TimePeriod =>
-	validTimePeriods.includes(timePeriod as TimePeriod);
+interface TimeRange {
+	start: Date;
+	end: Date;
+}
+
+const getTimeRange = (start: TimePeriod): TimeRange => {
+	const range: TimeRange = {
+		start: new Date(),
+		end: new Date(),
+	};
+
+	switch (start) {
+		case '24h':
+			range.start.setDate(range.start.getDate() - 1);
+			break;
+		case '7d':
+			range.start.setDate(range.start.getDate() - 7);
+			break;
+		case '1m':
+			range.start.setDate(range.start.getDate() - 30);
+			break;
+		case '6m':
+			range.start.setDate(range.start.getDate() - 180);
+			break;
+		case '1y':
+			range.start.setDate(range.start.getDate() - 365);
+			break;
+		default:
+			break;
+	}
+
+	return range;
+};
 
 export const TimePeriodSelect = ({ onSelect }: { onSelect?: (val: TimePeriod) => void }) => {
 	const [timePeriod, setTimePeriod] = useState<TimePeriod>('24h');
+	const [showDatePicker, setShowDatePicker] = useState(false);
 
-	const onSelectionChange = (timePeriodKey: Key) => {
-		if (!getIsValidTimePeriod(timePeriodKey)) return;
-		setTimePeriod(timePeriodKey);
+	const onSelectionChange = (key: Key) => {
+		if (key === 'custom-period') {
+			setShowDatePicker(true);
+		}
 
 		if (!onSelect) return;
-		onSelect(timePeriodKey);
+		onSelect(key as any);
 	};
 	return (
-		<Tabs onSelectionChange={onSelectionChange} selectedKey={timePeriod}>
-			<TabList className="flex divide-x-2 overflow-hidden rounded-md border text-center text-sm">
+		<>
+			<Select onSelectionChange={onSelectionChange} selectedKey={timePeriod}>
 				{validTimePeriods.map((val) => (
-					<Tab
-						id={val}
-						key={val}
-						className="w-[4ch] cursor-pointer p-1 outline-white selected:bg-white selected:text-dark"
-					>
+					<SelectItem key={val} id={val} className="w-[6ch] overflow-hidden">
 						{val}
-					</Tab>
+					</SelectItem>
 				))}
-			</TabList>
-		</Tabs>
+				<SelectItem id="custom-period">Custom</SelectItem>
+			</Select>
+			{showDatePicker && <DateRangePicker onChange={(val) => {}} defaultOpen />}
+		</>
 	);
 };

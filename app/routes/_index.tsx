@@ -1,97 +1,154 @@
-import type { MetaFunction } from '@remix-run/node';
-import { Form, Link } from '@remix-run/react';
-import { Button } from 'react-aria-components';
+import { ActionFunctionArgs, json } from '@remix-run/node';
+import { Link, useFetcher, useLoaderData } from '@remix-run/react';
+import { Button, DialogTrigger, MenuTrigger } from 'react-aria-components';
+import { BsThreeDotsVertical } from 'react-icons/bs';
+import { LuFolderPlus, LuGlobe, LuPlus, LuX } from 'react-icons/lu';
 
-import { WaitList } from '~/components/wait-list';
-import { useRootLoader } from '~/utils/hooks';
+import { LogoText } from '~/components/atoms/texts';
+import { Dialog } from '~/components/react-aria/Dialog';
+import { Menu, MenuItem } from '~/components/react-aria/Menu';
+import { Popover } from '~/components/react-aria/Popover';
+import { User } from '~/components/user';
+import { getUserFromCookie } from '~/utils/auth.server';
+import { projectsCollection } from '~/utils/database.server';
+import { getFaviconUrl } from '~/utils/misc';
 
-export const meta: MetaFunction = () => {
-	return [{ title: 'Home' }, { name: 'description', content: 'Analytics app' }];
+import { Modal } from '../components/react-aria/Modal';
+import { TextField } from '../components/react-aria/TextField';
+
+interface ProjectCardProps {
+	name: string;
+	baseUrl: string;
+	id: string;
+}
+
+const ProjectCard = (props: ProjectCardProps) => {
+	const url = getFaviconUrl(new URL(props.baseUrl).hostname, 128);
+	return (
+		<Link
+			to={`/${props.id}`}
+			className="group relative aspect-[4/3] w-64 rounded-lg p-2 ring-1 ring-white/50"
+		>
+			<div className="mb-2 flex aspect-[2/1] items-center justify-center rounded-md bg-white/5">
+				{url ? <img src={url} alt="" height={64} width={64} /> : <LuGlobe size={48} />}
+			</div>
+			<h3 className="font-medium">{props.name}</h3>
+			<p className="font-mono text-neutral-400">{props.baseUrl}</p>
+			<MenuTrigger>
+				<Button className="absolute right-0 top-0 m-3 opacity-0 duration-100 group-active:opacity-100 group-focus-within:opacity-100 group-hover:opacity-100">
+					<BsThreeDotsVertical size={24} />
+				</Button>
+				<Popover>
+					<Menu placement="top right">
+						<MenuItem id="edit">Edit</MenuItem>
+						<MenuItem id="delete">Delete</MenuItem>
+					</Menu>
+				</Popover>
+			</MenuTrigger>
+		</Link>
+	);
+};
+
+export const action = async (args: ActionFunctionArgs) => {
+	switch (args.request.method) {
+		case 'POST': {
+			const user = await getUserFromCookie(args.request.headers.get('Cookie'));
+			if (!user) return json({ error: 'User is not logged in' }, { status: 401 });
+			const formData = await args.request.formData();
+			const projectName = formData.get('project-name');
+			const projectBaseUrl = formData.get('project-base-url');
+			if (!projectName || !projectBaseUrl)
+				return json({ error: 'Project name or base url is missing in body' }, { status: 422 });
+
+			const arr = new Uint32Array(1);
+			crypto.getRandomValues(arr);
+			const projectId = arr[0]?.toString(16);
+			if (!projectId) break;
+			await projectsCollection.insertOne({
+				name: projectName.toString(),
+				baseUrl: projectBaseUrl.toString(),
+				id: projectId,
+				shouldMonitorUpTime: true,
+				ownerId: user._id.toString(),
+			});
+
+			break;
+		}
+		case 'DELETE': {
+			const formData = await args.request.formData();
+			const projectId = formData.get('project-id');
+			if (!projectId) return json({ error: 'Project ID is missing in body' }, { status: 422 });
+			await projectsCollection.deleteOne({ id: projectId });
+			break;
+		}
+
+		default:
+			break;
+	}
+	return null;
+};
+
+export const loader = async () => {
+	const projects = await projectsCollection.find().toArray();
+	return {
+		projects,
+	};
 };
 
 export default function Route() {
-	const data = useRootLoader();
+	const data = useLoaderData<typeof loader>();
+	const fetcher = useFetcher();
+	const projects = data.projects;
 
 	return (
-		<div className="flex flex-col items-center justify-between gap-8 p-4">
-			{data?.user ? (
-				<div className="flex scale-75 items-center gap-4 rounded-lg bg-blue-600 p-2 font-semibold ring-2 ring-white">
-					<p className="text-xl">{data.user.fullName ?? data.user.email}</p>
-					{data?.user.pictureUrl && (
-						<img
-							src={data.user.pictureUrl}
-							alt="User"
-							height={64}
-							width={64}
-							className="rounded-full bg-black ring-1 ring-white"
-						/>
-					)}
-					<Form method="POST" action="/log-out">
-						<Button type="submit" className="rounded-md bg-black p-2 text-lg">
-							Log Out
-						</Button>
-					</Form>
-				</div>
-			) : (
-				<nav className="flex gap-8 text-xl font-bold [&>a:hover]:underline">
-					<Link to="/auth" prefetch="intent">
-						Log In/ Sign Up
-					</Link>
-				</nav>
-			)}
-			<div>
-				<h1 className="mb-2 text-center text-5xl font-extrabold">
-					<img
-						src="/logo.png"
-						alt=""
-						height={48}
-						width={48}
-						className="mr-2 inline-block align-top"
-					/>
-					Snowball
-				</h1>
-				<h2>All in one tool for managing your website</h2>
+		<section className="flex size-full flex-col gap-4 p-4">
+			<div className="flex items-center justify-between px-2 py-4">
+				<LogoText />
+				<User />
 			</div>
-			<section className="grid grid-cols-2 gap-4 max-md:grid-cols-1 [&>div>h2]:mb-2 [&>div>h2]:text-2xl [&>div>h2]:font-semibold [&>div]:rounded-lg [&>div]:bg-white/5 [&>div]:p-6 [&_img]:float-left [&_img]:mr-4 [&_img]:size-[72px] [&_p]:italic">
-				<div>
-					<img src="/statistics.png" alt="" height={72} width={72} />
-					<h2>Analytics</h2>
-					<p>Real-time analytics to get insights</p>
-				</div>
-				<div>
-					<img src="/warning.png" alt="" height={72} width={72} />
-
-					<h2>Error Tracking</h2>
-					<p>Get notified instantly when something goes wrong</p>
-				</div>
-				<div>
-					<img src="/meter.png" alt="" height={72} width={72} />
-					<h2>Uptime Monitoring</h2>
-					<p>Get downtime alerts</p>
-				</div>
-				<div>
-					<img src="/seo.png" alt="" height={72} width={72} />
-					<h2>SEO Indexing</h2>
-					<p>Manually submit index requests to google</p>
-				</div>
-				<div>
-					<img src="/shield.png" alt="" height={72} width={72} draggable={false} />
-					<h2>GDPR Compliant</h2>
-					<p>No cookies are stored, so no need of a cookie banner</p>
-				</div>
-				<div>
-					<img src="/file.png" alt="" height={72} width={72} />
-					<h2>Export your data</h2>
-					<p>Export your data in CSV & JSON formats</p>
-				</div>
-			</section>
-			<Link
-				to="/dash"
-				className="rounded-lg border-2 border-white/60 bg-primary bg-gradient-to-r from-purple-600 to-red-400 px-6 py-3 text-xl font-bold"
-			>
-				View live demo
-			</Link>
-			<WaitList />
-		</div>
+			<div className="mx-auto w-full border border-white/20"></div>
+			<div className="flex items-center justify-between gap-4 px-2">
+				<h1 className="text-4xl font-semibold">My Websites</h1>
+				<DialogTrigger>
+					<Button className="flex size-fit items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-base font-semibold">
+						<LuPlus /> Add Website
+					</Button>
+					<Modal isDismissable>
+						<Dialog className="flex flex-col gap-4">
+							{({ close }) => (
+								<fetcher.Form onSubmit={close} method="POST" className="flex flex-col gap-4">
+									<Button onPress={close} className="ml-auto block bg-transparent p-1">
+										<LuX />
+									</Button>
+									<TextField label="Website Name" name="project-name" autoFocus isRequired />
+									<TextField
+										label="Website Base URL (https://...)"
+										name="project-base-url"
+										errorMessage="Please enter a valid URL"
+										isRequired
+									/>
+									<Button
+										type="submit"
+										className="rounded-lg bg-indigo-600 px-4 py-2 font-semibold"
+									>
+										Create
+									</Button>
+								</fetcher.Form>
+							)}
+						</Dialog>
+					</Modal>
+				</DialogTrigger>
+			</div>
+			<div className="flex flex-wrap gap-4">
+				{projects.length > 0 ? (
+					projects.map((project) => <ProjectCard key={project.id} {...project} />)
+				) : (
+					<div className="flex size-full flex-col items-center justify-center gap-4">
+						<LuFolderPlus size={48} />
+						<p className="text-xl font-medium">No projects yet</p>
+					</div>
+				)}
+			</div>
+		</section>
 	);
 }
