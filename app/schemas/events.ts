@@ -50,3 +50,7 @@ export const keyValueSchema = z.object({
 	key: z.string(),
 	value: z.string(),
 });
+
+export const osSchema = z.enum(['android', 'ios', 'windows', 'macos', 'linux', 'other']);
+export const browserSchema = z.enum(['chrome', 'safari', 'firefox', 'brave', 'opera', 'other']);
+export const platformSchema = z.enum(['desktop', 'mobile']);

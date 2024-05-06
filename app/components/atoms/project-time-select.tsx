@@ -43,18 +43,14 @@ export const ProjectTimeSelect = () => {
 				}}
 				className="flex w-64 items-center gap-2 text-sm font-semibold text-white"
 			>
-				<Button className="flex w-full rounded-md p-2 outline-none ring-white duration-100 focus:ring-1">
+				<Button className="flex w-full rounded-md p-2 ring-white duration-100 focus:ring-1">
 					<SelectValue />
 					<LuChevronDown className="ml-auto self-center" aria-hidden />
 				</Button>
 				<Popover>
 					<ListBox className="w-64 overflow-hidden rounded-md bg-dark ring-1 ring-white/10">
 						{fetcher.data?.projects?.map((val) => (
-							<ListBoxItem
-								key={val.id}
-								id={val.id}
-								className="w-full  p-2 outline-none focus:bg-white/10"
-							>
+							<ListBoxItem key={val.id} id={val.id} className="w-full  p-2 focus:bg-white/10">
 								<img
 									src={getFaviconUrl(val.baseUrl.replace('https://', ''))}
 									alt=""

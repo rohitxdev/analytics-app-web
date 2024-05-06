@@ -1,7 +1,7 @@
-import { useFetcher, useParams } from '@remix-run/react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Button, TooltipTrigger } from 'react-aria-components';
 import { LuInfo } from 'react-icons/lu';
+import { z } from 'zod';
 
 import { Tooltip } from '~/components/react-aria/Tooltip';
 import { uptimeEventSchema } from '~/schemas/events';
@@ -10,24 +10,15 @@ import { timeFormatter } from '~/utils/misc';
 import { Switch } from '../atoms/switch';
 import { Widget } from '../atoms/widget';
 
-export const UpTime = () => {
-	const { projectId } = useParams();
-	const fetcher = useFetcher<{ events?: (typeof uptimeEventSchema)[] }>();
-	const loaderData = uptimeEventSchema.array().catch([]).parse(fetcher.data?.events);
-	const lastUpdatedTimestamp = loaderData[1]?.timestamp;
+export const UpTime = ({ data }: { data: z.infer<typeof uptimeEventSchema>[] }) => {
+	const lastUpdatedTimestamp = data[1]?.timestamp;
+	const [isClient, setIsClient] = useState(false);
 
 	useEffect(() => {
-		fetcher.load(`/up-time?projectId=${projectId}`);
+		setIsClient(true);
+	}, []);
 
-		const timerId = window.setInterval(() => {
-			fetcher.load(`/up-time?projectId=${projectId}`);
-		}, 30 * 1000);
-
-		return () => {
-			window.clearInterval(timerId);
-		};
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [projectId]);
+	if (!isClient) return null;
 
 	return (
 		<Widget.Container aria-label="Up time of project" className="flex w-fit flex-col gap-1">
@@ -54,14 +45,14 @@ export const UpTime = () => {
 				<Switch />
 			</div>
 			<div className="flex items-center gap-1">
-				{loaderData.reverse().map((val, i) => (
+				{data.reverse().map((val, i) => (
 					<div key={val.timestamp.toTimeString() + i} className="relative">
 						<div
-							data-down={val?.isDown}
+							data-down={val.isDown}
 							className="peer h-4 w-1.5 rounded-sm bg-green-400 data-[down=true]:bg-red-400 hover:brightness-[0.6]"
 						></div>
 						<div
-							data-down={val?.isDown}
+							data-down={val.isDown}
 							className="absolute bottom-full left-1/2 z-10 hidden -translate-x-1/2 items-center rounded bg-black p-1 text-xs peer-hover:flex"
 						>
 							<p className="whitespace-nowrap">{timeFormatter.format(val.timestamp)}</p>
@@ -72,11 +63,11 @@ export const UpTime = () => {
 			</div>
 			<h3 className="mt-2 text-sm text-neutral-300">Recent incidents</h3>
 			<ul className="divide-y-[1px] divide-white/40">
-				{loaderData
+				{data
 					.slice(0, 5)
 					.reverse()
 					.map((val, i) => (
-						<li key={val.timestamp.toDateString()} className="flex gap-8 p-3">
+						<li key={val.timestamp.toTimeString() + i} className="flex gap-8 p-3">
 							<p>{timeFormatter.format(val.timestamp)}</p>
 							<p
 								data-down={i % 2 === 0}

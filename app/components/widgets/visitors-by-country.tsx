@@ -1,8 +1,9 @@
 import { useEffect } from 'react';
 
+import countryCodes from '../../assets/country-codes.json';
 import WorldMap from '../../assets/world-map.min.svg';
-import { TimePeriodSelect } from '../atoms/time-period-select';
 import { Widget } from '../atoms/widget';
+import { BarGraph } from './top-stats';
 
 const viewsByCountriesPercentage = {
 	AU: 6,
@@ -14,7 +15,9 @@ const viewsByCountriesPercentage = {
 	GA: 8,
 };
 
-export const UsersByCountry = () => {
+export type CountryCode = keyof typeof countryCodes;
+
+export const VisitorsByCountry = ({ data }: { data: KeyValue[] }) => {
 	useEffect(() => {
 		Object.entries(viewsByCountriesPercentage).forEach((entry) => {
 			const country = document.getElementById(entry[0].toLowerCase());
@@ -26,12 +29,18 @@ export const UsersByCountry = () => {
 	return (
 		<Widget.Container className="aspect-video text-center">
 			<div className="mb-4 flex justify-between">
-				<Widget.Title>Viewers by country</Widget.Title>
-				<TimePeriodSelect />
+				<Widget.Title>Visitors by Country</Widget.Title>
 			</div>
 			<WorldMap
 				width={550}
 				className="fill-transparent stroke-white stroke-1 [&_path:hover]:fill-white/30"
+			/>
+			<BarGraph
+				name="Country"
+				data={data}
+				labelIcon={(key) => (
+					<img alt={key} src={`https://flagsapi.com/${key}/flat/64.png`} className="w-6" />
+				)}
 			/>
 		</Widget.Container>
 	);

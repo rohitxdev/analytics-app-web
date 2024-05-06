@@ -1,4 +1,4 @@
-import { createCookie } from '@remix-run/node';
+import { createCookie, createCookieSessionStorage } from '@remix-run/node';
 import jwt from 'jsonwebtoken';
 import { ObjectId } from 'mongodb';
 
@@ -59,3 +59,29 @@ export const getUserFromCookie = async (cookie: string | null | undefined) => {
 	if (!parsedCookie?.refreshToken) return null;
 	return await getUserFromToken(parsedCookie.refreshToken);
 };
+
+type SessionData = {
+	userId: string;
+};
+
+type SessionFlashData = {
+	error: string;
+};
+
+export const { getSession, commitSession, destroySession } = createCookieSessionStorage<
+	SessionData,
+	SessionFlashData
+>({
+	cookie: {
+		name: '__session',
+
+		// all of these are optional
+		// domain: 'remix.run',
+		httpOnly: true,
+		maxAge: 60,
+		path: '/',
+		// sameSite:'strict',
+		secrets: ['s3cret1'],
+		// secure: true,
+	},
+});

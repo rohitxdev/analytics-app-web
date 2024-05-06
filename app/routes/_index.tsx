@@ -26,7 +26,7 @@ const ProjectCard = (props: ProjectCardProps) => {
 	const url = getFaviconUrl(new URL(props.baseUrl).hostname, 128);
 	return (
 		<Link
-			to={`/${props.id}`}
+			to={`/${props.id}/overview`}
 			className="group relative aspect-[4/3] w-64 rounded-lg p-2 ring-1 ring-white/50"
 		>
 			<div className="mb-2 flex aspect-[2/1] items-center justify-center rounded-md bg-white/5">

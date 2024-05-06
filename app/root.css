@@ -64,3 +64,35 @@ body {
 		inset 0 0 0 1px red,
 		inset 0 0 0 2px black;
 }
+
+@keyframes grow-width {
+	from {
+		opacity: 0;
+		transform: scaleX(0);
+	}
+}
+
+@keyframes fade-in {
+	from {
+		opacity: 0;
+	}
+}
+
+.animate-grow-width {
+	transform-origin: left;
+	animation: grow-width 200ms ease-in forwards;
+}
+
+.animate-fade-in {
+	animation: fade-in 200ms ease-in forwards;
+	animation-delay: 100ms;
+}
+
+:focus {
+	outline-offset: 0.25rem;
+	transition: outline-offset 100ms;
+}
+
+:not(:active):focus-visible {
+	transition: outline-offset 200ms;
+}

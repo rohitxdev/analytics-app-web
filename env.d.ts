@@ -1,4 +1,4 @@
-/// <reference types="./app/types/svg.d.ts" />
+/// <reference types="./app/types/global.d.ts" />
 /// <reference types="@remix-run/node" />
 /// <reference types="vite/client" />
 

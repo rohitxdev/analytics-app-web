@@ -21,7 +21,7 @@ import { projectsCollection } from '~/utils/database.server';
 const StyledTab = ({ children, className, ...rest }: ComponentPropsWithRef<typeof Tab>) => {
 	return (
 		<Tab
-			className={`flex gap-4 rounded-none border-indigo-500 text-neutral-700 !outline-none hover:bg-transparent selected:border-b-[3px] selected:bg-transparent selected:text-white [&>span]:font-semibold [&>svg]:size-6 ${className}`}
+			className={`flex gap-4 rounded-none border-indigo-500 text-neutral-700 hover:bg-transparent selected:border-b-[3px] selected:bg-transparent selected:text-white [&>span]:font-semibold [&>svg]:size-6 ${className}`}
 			{...rest}
 		>
 			{children}
@@ -66,7 +66,7 @@ export default function Route() {
 				>
 					{/* <LogoText className="scale-[0.8]" /> */}
 					<TabList className="flex">
-						<StyledTab id={`/${project.id}`}>
+						<StyledTab id={`/${project.id}/overview`}>
 							<LuLayoutGrid />
 							<span>Overview</span>
 						</StyledTab>
