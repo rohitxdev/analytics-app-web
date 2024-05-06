@@ -95,6 +95,7 @@ interface FlashData {
 
 export const getUserFromSession = async (session: Session<SessionData, FlashData>) => {
 	try {
+		if (!session.has('userId')) return null;
 		const user = await usersCollection.findOne({ _id: new ObjectId(session.get('userId')) });
 		if (!user) return null;
 		const parsedUser = userSchema.parse(user);

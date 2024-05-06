@@ -3,29 +3,25 @@ import '@radix-ui/themes/styles.css';
 
 import { LoaderFunctionArgs, redirect } from '@remix-run/node';
 import { Links, Meta, Outlet, Scripts, ScrollRestoration } from '@remix-run/react';
-import { ObjectId } from 'mongodb';
 import { StrictMode, useEffect } from 'react';
 import { Toaster } from 'react-hot-toast';
 import { z } from 'zod';
 
-import { getSession } from '~/utils/auth.server';
+import { getSession, getUserFromSession } from '~/utils/auth.server';
 
 // eslint-disable-next-line import/default
 import sdkUrl from './sdk?url';
-import { usersCollection } from './utils/database.server';
 import { logDoge } from './utils/misc';
+
+const excludedPaths = ['/auth', '/not-found'];
 
 export const loader = async (args: LoaderFunctionArgs) => {
 	const { pathname } = new URL(args.request.url);
-	if (pathname.startsWith('/auth') || pathname.startsWith('/not-found')) return null;
+	if (excludedPaths.some((item) => pathname.includes(item))) return null;
 
 	const session = await getSession(args.request.headers.get('Cookie'));
-	if (!session.has('userId')) return redirect('/auth/log-in');
-
-	const user = await usersCollection.findOne({ _id: new ObjectId(session.get('userId')) });
-	console.log({ user });
-
-	return { user };
+	const user = await getUserFromSession(session);
+	return user ? { user } : redirect('/auth/log-in');
 };
 
 export default function App() {
