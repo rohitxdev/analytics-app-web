@@ -1,25 +1,10 @@
-import { useNavigate, useParams, useRouteLoaderData } from '@remix-run/react';
-import { z } from 'zod';
-
-import { User } from '~/schemas/auth';
+import { useRouteLoaderData } from '@remix-run/react';
 
 import { loader } from '../root';
 
-export const useRootLoader = () =>
-	useRouteLoaderData<typeof loader>('root') as { user: User } | null;
+export const useRootLoader = () => useRouteLoaderData<typeof loader>('root');
 
-const projectParamsSchema = z
-	.object({ projectId: z.string() })
-	.transform((item) => ({ id: item.projectId }));
-
-export const useProject = () => {
-	const params = useParams();
-	const navigate = useNavigate();
-
-	try {
-		return projectParamsSchema.parse(params);
-	} catch (error) {
-		navigate({ pathname: '/' });
-		return null;
-	}
+export const useUser = () => {
+	const data = useRootLoader();
+	return data?.user ?? null;
 };

@@ -15,15 +15,17 @@ import { LuLogOut, LuSave } from 'react-icons/lu';
 
 import { Tooltip } from '~/components/react-aria/Tooltip';
 import { userPreferencesSchema } from '~/schemas/auth';
-import { getUserFromCookie } from '~/utils/auth.server';
+import { getSession, getUserFromSession } from '~/utils/auth.server';
 import { usersCollection } from '~/utils/database.server';
-import { useRootLoader } from '~/utils/hooks';
+import { useUser } from '~/utils/hooks';
 
 import { Switch } from '../components/atoms/switch';
 import { Select, SelectItem } from '../components/react-aria/Select';
 
 export const action = async (args: ActionFunctionArgs) => {
-	const user = await getUserFromCookie(args.request.headers.get('Cookie'));
+	const session = await getSession(args.request.headers.get('Cookie'));
+	if (!session.has('userId')) return null;
+	const user = await getUserFromSession(session);
 	if (!user) return null;
 
 	const formData = await args.request.formData();
@@ -57,12 +59,12 @@ export const action = async (args: ActionFunctionArgs) => {
 };
 
 export default function Route() {
-	const rootLoaderData = useRootLoader();
+	const user = useUser();
 	const [profilePic, setProfilePic] = useState(
-		rootLoaderData?.user.pictureUrl ?? `https://api.dicebear.com/7.x/lorelei/svg?seed=6969`,
+		user?.pictureUrl ?? `https://api.dicebear.com/7.x/lorelei/svg?seed=6969`,
 	);
 	const [isChanged, setIsChanged] = useState(false);
-	const preferences = rootLoaderData?.user.preferences;
+	const preferences = user?.preferences;
 
 	return (
 		<section className="flex flex-col gap-4 p-4 font-semibold">
@@ -92,7 +94,7 @@ export default function Route() {
 					<Button className="[all:unset]">
 						<TextField
 							isDisabled
-							defaultValue={rootLoaderData?.user.email ?? 'user@gmail.com'}
+							defaultValue={user?.email ?? 'user@gmail.com'}
 							className="flex flex-col"
 						>
 							<Label className="text-neutral-400">Email</Label>
@@ -107,7 +109,7 @@ export default function Route() {
 				</TooltipTrigger>
 				<TextField
 					name="full-name"
-					defaultValue={rootLoaderData?.user?.fullName ?? 'Set your name'}
+					defaultValue={user?.fullName ?? 'Set your name'}
 					className="flex flex-col"
 				>
 					<Label className="text-neutral-400">Full name</Label>
@@ -116,7 +118,7 @@ export default function Route() {
 							required
 							className="w-[30ch] rounded-l-md bg-white/20 px-3 py-2 text-lg"
 							onInput={(e) => {
-								setIsChanged(e.currentTarget.value.trim() !== rootLoaderData?.user?.fullName);
+								setIsChanged(e.currentTarget.value.trim() !== user?.fullName);
 							}}
 						/>
 						<Button

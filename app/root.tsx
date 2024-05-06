@@ -3,86 +3,29 @@ import '@radix-ui/themes/styles.css';
 
 import { LoaderFunctionArgs, redirect } from '@remix-run/node';
 import { Links, Meta, Outlet, Scripts, ScrollRestoration } from '@remix-run/react';
-import jwt from 'jsonwebtoken';
 import { ObjectId } from 'mongodb';
 import { StrictMode, useEffect } from 'react';
 import { Toaster } from 'react-hot-toast';
 import { z } from 'zod';
 
-import { getUserFromCookie, logInCookie } from '~/utils/auth.server';
+import { getSession } from '~/utils/auth.server';
 
-import { googleUserSchema } from './schemas/auth';
 // eslint-disable-next-line import/default
 import sdkUrl from './sdk?url';
-import { exchangeCodeForToken, exchangeTokenForUserInfo } from './utils/auth';
 import { usersCollection } from './utils/database.server';
 import { logDoge } from './utils/misc';
 
 export const loader = async (args: LoaderFunctionArgs) => {
-	const user = await getUserFromCookie(args.request.headers.get('Cookie'));
-	if (user) return { user };
+	const { pathname } = new URL(args.request.url);
+	if (pathname.startsWith('/auth') || pathname.startsWith('/not-found')) return null;
 
-	const { searchParams, origin, pathname } = new URL(args.request.url);
-	if (pathname.startsWith('/auth') || pathname.startsWith('/not-found')) {
-		return null;
-	}
+	const session = await getSession(args.request.headers.get('Cookie'));
+	if (!session.has('userId')) return redirect('/auth/log-in');
 
-	const code = searchParams.get('code');
-	if (!code) return redirect('/auth/log-in');
+	const user = await usersCollection.findOne({ _id: new ObjectId(session.get('userId')) });
+	console.log({ user });
 
-	switch (searchParams.get('state')) {
-		case 'google': {
-			const token = await exchangeCodeForToken(code, origin);
-			if (!token) return null;
-
-			const userInfo = await exchangeTokenForUserInfo(token);
-			if (!userInfo) return null;
-
-			const googleUser = googleUserSchema.safeParse(userInfo);
-			if (!googleUser.success) return null;
-
-			const { email, name, picture } = googleUser.data;
-			const user = await usersCollection.findOne({ email });
-			let userId: ObjectId | null = user?._id ?? null;
-			if (!user) {
-				const { insertedId } = await usersCollection.insertOne({
-					email,
-					fullName: name,
-					pictureUrl: picture,
-					role: 'user',
-					isBanned: false,
-					preferences: {
-						shouldSendEmailReports: true,
-						analyticsReportsFrequency: 'weekly',
-						errorReportsFrequency: 'weekly',
-						graphAnimationsEnabled: true,
-					},
-				});
-				userId = insertedId;
-			}
-
-			return redirect('/', {
-				headers: {
-					'Set-Cookie': await logInCookie.serialize({
-						refreshToken: jwt.sign({ sub: userId }, process.env.JWT_SECRET, {
-							expiresIn: '30d',
-						}),
-					}),
-				},
-			});
-		}
-		case 'github': {
-			return null;
-		}
-		default: {
-			return new Response(null, {
-				status: 200,
-				headers: {
-					'Set-Cookie': await logInCookie.serialize(null, { maxAge: 0 }),
-				},
-			});
-		}
-	}
+	return { user };
 };
 
 export default function App() {

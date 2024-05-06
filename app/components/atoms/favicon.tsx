@@ -1,4 +1,4 @@
-import { ComponentProps, useLayoutEffect, useState } from 'react';
+import { ComponentProps, useEffect, useState } from 'react';
 import { IoGlobeOutline } from 'react-icons/io5';
 
 import { getFaviconUrl, parseDomain } from '~/utils/misc';
@@ -11,7 +11,7 @@ export const Favicon = ({ websiteUrl, ...rest }: FaviconProps) => {
 	const [domain, setDomain] = useState<string | null>(null);
 	const [isError, setIsError] = useState(false);
 
-	useLayoutEffect(() => {
+	useEffect(() => {
 		try {
 			const { fullDomain } = parseDomain(websiteUrl);
 			setDomain(fullDomain);

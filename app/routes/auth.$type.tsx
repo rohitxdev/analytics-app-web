@@ -10,11 +10,17 @@ import { z } from 'zod';
 
 import { CopyrightText, LogoText } from '~/components/atoms/texts';
 import { FieldError } from '~/components/react-aria/Field';
-import { userSchema } from '~/schemas/auth';
-import { getGoogleAuthUrl } from '~/utils/auth';
-import { checkLoggedIn, logInCookie } from '~/utils/auth.server';
+import { googleUserSchema, userSchema } from '~/schemas/auth';
+import {
+	commitSession,
+	destroySession,
+	exchangeCodeForToken,
+	exchangeTokenForUserInfo,
+	getGoogleAuthUrl,
+	getSession,
+} from '~/utils/auth.server';
 import { usersCollection } from '~/utils/database.server';
-import { useRootLoader } from '~/utils/hooks';
+import { useUser } from '~/utils/hooks';
 import { getRandomNumber } from '~/utils/numbers';
 
 import GitHubLogoIcon from '../assets/github.svg';
@@ -49,15 +55,14 @@ const forgotPasswordBodySchema = z.object({
 	email: z.string().email(),
 });
 
-export const action = async ({ request }: ActionFunctionArgs) => {
-	if (await checkLoggedIn(request.headers.get('Cookie'))) {
-		return json({ error: 'user is already logged in' }, 400);
-	}
+export const action = async (args: ActionFunctionArgs) => {
+	const session = await getSession();
+	if (session.has('userId')) return json({ error: 'user is already logged in' }, 400);
 
-	const formData = Object.fromEntries(await request.formData());
+	const formData = Object.fromEntries(await args.request.formData());
 	if (formData['bot-trap']) return null;
 
-	switch (formData['auth-type']) {
+	switch (args.params.type) {
 		case 'log-in': {
 			const logInData = logInBodySchema.safeParse(formData);
 			if (!logInData.success) return json(logInData.error, 422);
@@ -68,16 +73,16 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 			if (!(await argon2.verify(user.passwordHash, logInData.data.password))) {
 				return json({ error: 'incorrect password' }, 400);
 			}
+
+			session.set('userId', user._id.toString());
+
 			return redirect('/', {
 				headers: {
-					'Set-Cookie': await logInCookie.serialize({
-						refreshToken: jwt.sign({ sub: user._id }, process.env.JWT_SECRET, {
-							expiresIn: '30d',
-						}),
-					}),
+					'Set-Cookie': await commitSession(session),
 				},
 			});
 		}
+
 		case 'sign-up': {
 			const signUpData = signUpBodySchema.safeParse(formData);
 			if (!signUpData.success) return json(signUpData.error, 422);
@@ -86,7 +91,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 				return json({ error: 'user with this email already exists' }, 400);
 			}
 
-			const user = await usersCollection.insertOne({
+			const { insertedId: userId } = await usersCollection.insertOne({
 				email: signUpData.data.email,
 				passwordHash: await argon2.hash(signUpData.data.password),
 				pictureUrl: `https://api.dicebear.com/7.x/lorelei/svg?seed=${getRandomNumber(9999, 99999)}`,
@@ -100,16 +105,22 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 				isBanned: false,
 			} satisfies z.infer<typeof userSchema>);
 
+			session.set('userId', userId.toString());
+
 			return redirect('/', {
 				headers: {
-					'Set-Cookie': await logInCookie.serialize({
-						refreshToken: jwt.sign({ sub: user.insertedId }, process.env.JWT_SECRET, {
-							expiresIn: '30d',
-						}),
-					}),
+					'Set-Cookie': await commitSession(session),
 				},
 			});
 		}
+
+		case 'log-out':
+			return redirect('/', {
+				headers: {
+					'Set-Cookie': await destroySession(session),
+				},
+			});
+
 		case 'forgot-password': {
 			const forgotPasswordData = forgotPasswordBodySchema.safeParse(formData);
 			if (!forgotPasswordData.success) return json(forgotPasswordData.error, 422);
@@ -126,40 +137,94 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 			await usersCollection.findOneAndUpdate({ _id: user._id }, { $set: { passwordResetToken } });
 			return { message: 'Sent reset password email', passwordResetToken };
 		}
+
 		default:
-			return json({ error: 'Invalid auth type' }, 400);
+			return json({ error: 'invalid auth type' }, 400);
 	}
 };
 
 export const loader = async (args: LoaderFunctionArgs) => {
-	const isLoggedIn = await checkLoggedIn(args.request.headers.get('Cookie'));
-	const { origin } = new URL(args.request.url);
+	const session = await getSession(args.request.headers.get('Cookie'));
+
+	if (session.has('userId')) return redirect('/');
+
+	const { searchParams, origin } = new URL(args.request.url);
 
 	const authType = authTypeSchema.safeParse(args.params.type);
-	if (!authType.success) return redirect(`/auth/log-in`);
+	if (!authType.success) return redirect('/auth/log-in');
 
-	return {
-		googleAuthUrl: isLoggedIn
-			? ''
-			: getGoogleAuthUrl({
-					clientId: process.env.GOOGLE_CLIENT_ID!,
-					redirectUri: origin,
-					responseType: 'code',
-					scope: 'email profile',
-					prompt: 'consent',
-					state: 'google',
-					accessType: 'offline',
-				}),
-		gitHubAuthUrl: ' ',
-	};
+	const code = searchParams.get('code');
+	const redirectUri = origin + '/auth/log-in';
+
+	if (!code)
+		return {
+			googleAuthUrl: getGoogleAuthUrl({
+				clientId: process.env.GOOGLE_CLIENT_ID!,
+				redirectUri,
+				responseType: 'code',
+				scope: 'email profile',
+				prompt: 'consent',
+				state: 'google',
+				accessType: 'offline',
+			}),
+			gitHubAuthUrl: null,
+		};
+
+	switch (searchParams.get('state')) {
+		case 'google': {
+			const token = await exchangeCodeForToken(code, redirectUri);
+			if (!token) return null;
+
+			const userInfo = await exchangeTokenForUserInfo(token);
+			if (!userInfo) return null;
+
+			const googleUser = googleUserSchema.safeParse(userInfo);
+			if (!googleUser.success) return null;
+
+			const { email, name, picture } = googleUser.data;
+			const user = await usersCollection.findOne({ email });
+
+			if (user?._id) {
+				session.set('userId', user._id.toString());
+			} else {
+				const { insertedId: userId } = await usersCollection.insertOne({
+					email,
+					fullName: name,
+					pictureUrl: picture,
+					role: 'user',
+					isBanned: false,
+					preferences: {
+						shouldSendEmailReports: true,
+						analyticsReportsFrequency: 'weekly',
+						errorReportsFrequency: 'weekly',
+						graphAnimationsEnabled: true,
+					},
+				});
+				session.set('userId', userId.toString());
+			}
+			return redirect('/', {
+				headers: {
+					'Set-Cookie': await commitSession(session),
+				},
+			});
+		}
+		case 'github': {
+			return null;
+		}
+		default: {
+			return null;
+		}
+	}
 };
 
 export default function Route() {
 	const params = useParams();
 	const authType = params.type as z.infer<typeof authTypeSchema>;
-	const { googleAuthUrl, gitHubAuthUrl } = useLoaderData<typeof loader>();
+	const data = useLoaderData<typeof loader>();
+	const googleAuthUrl = data?.googleAuthUrl;
+	const gitHubAuthUrl = data?.gitHubAuthUrl;
 	const passwordRef = useRef<string | null>(null);
-	const rootData = useRootLoader();
+	const user = useUser();
 	const { state } = useNavigation();
 
 	return (
@@ -171,7 +236,7 @@ export default function Route() {
 			>
 				<LuArrowLeft className="size-full" />
 			</Link>
-			{rootData?.user ? (
+			{user ? (
 				<>
 					<h2 className="text-2xl font-semibold">You are already logged in.</h2>
 				</>
@@ -181,6 +246,7 @@ export default function Route() {
 					<Form
 						className="flex w-[36ch] shrink-0 flex-col items-center gap-4 rounded-lg p-6 ring-1 ring-white/30"
 						method="POST"
+						action={`/auth/${authType}`}
 					>
 						<TextField
 							type="email"
@@ -206,8 +272,6 @@ export default function Route() {
 						{authType === 'forgot-password' && (
 							<Button
 								type="submit"
-								name="auth-type"
-								value={authType}
 								className="mt-2 h-12 w-full rounded-lg bg-indigo-600 text-lg font-semibold"
 								onPress={() => toast.success('Sent email!', { style: { fontWeight: 500 } })}
 							>
@@ -276,8 +340,6 @@ export default function Route() {
 							<>
 								<Button
 									type="submit"
-									name="auth-type"
-									value={authType}
 									className="mt-2 h-12 w-full rounded-lg bg-indigo-600 text-lg font-semibold"
 								>
 									{state === 'submitting' ? (
@@ -303,18 +365,22 @@ export default function Route() {
 									<span>OR</span>
 									<hr />
 								</div>
-								<Link
-									to={googleAuthUrl}
-									className="flex h-12 w-full items-center justify-center gap-5 rounded-lg bg-white font-semibold text-black"
-								>
-									Continue with Google <GoogleLogoIcon width={24} height={24} />
-								</Link>
-								<Link
-									to={gitHubAuthUrl}
-									className="flex h-12 w-full items-center justify-center gap-5 rounded-lg bg-white font-semibold text-black"
-								>
-									Continue with GitHub <GitHubLogoIcon width={24} height={24} />
-								</Link>
+								{googleAuthUrl && (
+									<Link
+										to={googleAuthUrl}
+										className="flex h-12 w-full items-center justify-center gap-5 rounded-lg bg-white font-semibold text-black"
+									>
+										Continue with Google <GoogleLogoIcon width={24} height={24} />
+									</Link>
+								)}
+								{gitHubAuthUrl && (
+									<Link
+										to={gitHubAuthUrl}
+										className="flex h-12 w-full items-center justify-center gap-5 rounded-lg bg-white font-semibold text-black"
+									>
+										Continue with GitHub <GitHubLogoIcon width={24} height={24} />
+									</Link>
+								)}
 							</>
 						)}
 						<input type="email" name="bot-trap" aria-hidden className="hidden" />
