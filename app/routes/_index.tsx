@@ -9,7 +9,7 @@ import { Dialog } from '~/components/react-aria/Dialog';
 import { Menu, MenuItem } from '~/components/react-aria/Menu';
 import { Popover } from '~/components/react-aria/Popover';
 import { User } from '~/components/user';
-import { getUserFromCookie } from '~/utils/auth.server';
+import { getSession, getUserFromSession } from '~/utils/auth.server';
 import { projectsCollection } from '~/utils/database.server';
 import { getFaviconUrl } from '~/utils/misc';
 
@@ -50,9 +50,11 @@ const ProjectCard = (props: ProjectCardProps) => {
 };
 
 export const action = async (args: ActionFunctionArgs) => {
+	const session = await getSession(args.request.headers.get('Cookie'));
+
 	switch (args.request.method) {
 		case 'POST': {
-			const user = await getUserFromCookie(args.request.headers.get('Cookie'));
+			const user = await getUserFromSession(session);
 			if (!user) return json({ error: 'User is not logged in' }, { status: 401 });
 			const formData = await args.request.formData();
 			const projectName = formData.get('project-name');
@@ -90,9 +92,7 @@ export const action = async (args: ActionFunctionArgs) => {
 
 export const loader = async () => {
 	const projects = await projectsCollection.find().toArray();
-	return {
-		projects,
-	};
+	return json({ projects }, { headers: { 'Cache-Control': 'max-age=360' } });
 };
 
 export default function Route() {

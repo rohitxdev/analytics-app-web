@@ -11,14 +11,14 @@ export const Widget = {
 			</section>
 		);
 	},
-	Title: ({ className, children, ...rest }: ComponentProps<'h2'>) => {
+	Title: ({ className, children, ...rest }: ComponentProps<'h3'>) => {
 		return (
-			<h2
+			<h3
 				className={`mr-auto flex items-center gap-1 text-center text-xl font-bold ${className}`}
 				{...rest}
 			>
 				{children}
-			</h2>
+			</h3>
 		);
 	},
 };

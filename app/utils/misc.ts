@@ -26,7 +26,7 @@ export const logDoge = () => {
 	);
 };
 
-export const timePeriodSchema = z.enum(['24h', '7d', '1m', '6m', '1y']);
+export const timePeriodSchema = z.enum(['24h', '7d', '1m', '6m', '1y', 'custom']);
 
 export type TimePeriod = z.infer<typeof timePeriodSchema>;
 
@@ -72,7 +72,7 @@ export const parseFormData = (formData: FormData, schema: ZodSchema) => {
 	}
 };
 
-const locale = typeof navigator !== 'undefined' ? navigator.language : 'en-US';
+const locale = typeof navigator !== 'undefined' ? navigator.language : 'en-GB';
 const cutoffs = [60, 3600, 86400, 86400 * 7, 86400 * 30, 86400 * 365, Infinity] as const;
 const timeUnits: Intl.RelativeTimeFormatUnit[] = [
 	'second',

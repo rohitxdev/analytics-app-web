@@ -3,7 +3,7 @@ export const getRandomNumber = (min: number, max: number, truncate = true) => {
 	return truncate ? Math.trunc(val) : val;
 };
 
-export const numFormatter = new Intl.NumberFormat('en-US', {
+export const numFormatter = new Intl.NumberFormat('en-GB', {
 	notation: 'compact',
 	maximumSignificantDigits: 3,
 });

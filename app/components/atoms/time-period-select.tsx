@@ -1,70 +1,153 @@
-import { useState } from 'react';
-import { Key } from 'react-aria-components';
+import { fromDate as fromDatetoZonedDate } from '@internationalized/date';
+import { useSearchParams } from '@remix-run/react';
+import { ComponentProps, useCallback, useEffect, useState } from 'react';
+import { Key } from 'react-aria';
+import {
+	Button,
+	ListBox,
+	ListBoxItem as AriaListBoxItem,
+	Popover,
+	Select,
+	SelectValue,
+} from 'react-aria-components';
+import { LuCalendar, LuCheck, LuChevronDown } from 'react-icons/lu';
 
-import { TimePeriod } from '~/utils/misc';
+import { DateRangePicker } from '~/components/react-aria/DateRangePicker';
+import { TimePeriod, timePeriodSchema } from '~/utils/misc';
 
-import { DateRangePicker } from '../react-aria/DateRangePicker';
-import { Select, SelectItem } from '../react-aria/Select';
-
-const validTimePeriods: TimePeriod[] = ['24h', '7d', '1m', '6m', '1y'];
-
-interface TimeRange {
-	start: Date;
-	end: Date;
-}
-
-const getTimeRange = (start: TimePeriod): TimeRange => {
-	const range: TimeRange = {
-		start: new Date(),
-		end: new Date(),
-	};
-
-	switch (start) {
+const timePeriodToDate = (timePeriod: TimePeriod) => {
+	const date = new Date();
+	switch (timePeriod) {
 		case '24h':
-			range.start.setDate(range.start.getDate() - 1);
+			date.setDate(date.getDate() - 1);
 			break;
 		case '7d':
-			range.start.setDate(range.start.getDate() - 7);
+			date.setDate(date.getDate() - 7);
 			break;
 		case '1m':
-			range.start.setDate(range.start.getDate() - 30);
+			date.setDate(date.getDate() - 30);
 			break;
 		case '6m':
-			range.start.setDate(range.start.getDate() - 180);
+			date.setDate(date.getDate() - 180);
 			break;
 		case '1y':
-			range.start.setDate(range.start.getDate() - 365);
+			date.setDate(date.getDate() - 365);
 			break;
 		default:
 			break;
 	}
-
-	return range;
+	return date;
 };
 
-export const TimePeriodSelect = ({ onSelect }: { onSelect?: (val: TimePeriod) => void }) => {
-	const [timePeriod, setTimePeriod] = useState<TimePeriod>('24h');
+const formatDate = (date: Date) => date.toLocaleDateString('en-GB', { dateStyle: 'short' });
+const getDate = (dateString: string) => new Date(dateString);
+
+const ListBoxItem = ({ children, className, ...rest }: ComponentProps<typeof AriaListBoxItem>) => (
+	<AriaListBoxItem
+		className={`group flex h-10 items-center rounded-md px-4 outline-none focus:bg-neutral-800 ${className}`}
+		{...rest}
+	>
+		<>
+			{children}
+			<LuCheck className="ml-auto mr-2 hidden size-5 group-selected:block" />
+		</>
+	</AriaListBoxItem>
+);
+
+interface TimePeriodSelectProps extends ComponentProps<'section'> {}
+
+export const TimePeriodSelect = (props: TimePeriodSelectProps) => {
+	const [searchParams, setSearchParams] = useSearchParams();
+	const timePeriod = searchParams.get('period');
+	const from = searchParams.get('from');
+	const to = searchParams.get('to');
 	const [showDatePicker, setShowDatePicker] = useState(false);
 
-	const onSelectionChange = (key: Key) => {
-		if (key === 'custom-period') {
-			setShowDatePicker(true);
-		}
+	const setTimePeriod = useCallback(
+		(timePeriod: TimePeriod) => {
+			setSearchParams((params) => {
+				if (timePeriod !== 'custom') {
+					const fromDate = timePeriodToDate(timePeriod);
+					const toDate = new Date();
+					params.set('from', fromDate.toISOString());
+					params.set('to', toDate.toISOString());
+				}
+				params.set('period', timePeriod);
+				return params;
+			});
+		},
+		[setSearchParams],
+	);
 
-		if (!onSelect) return;
-		onSelect(key as any);
+	const setFromDate = (date: string) => {
+		const fromDate = new Date(date);
+		fromDate.setHours(-24, 0, 0, 0);
+		setSearchParams((params) => {
+			params.set('from', fromDate.toISOString());
+			return params;
+		});
 	};
+
+	const setToDate = (date: string) => {
+		const toDate = new Date(date);
+		toDate.setHours(23, 59, 59, 0);
+		setSearchParams((params) => {
+			params.set('to', toDate.toISOString());
+			return params;
+		});
+	};
+
+	const onSelectionChange = (key: Key) => {
+		const val = timePeriodSchema.parse(key);
+		if (val === 'custom') setShowDatePicker(true);
+		setTimePeriod(val);
+	};
+
+	useEffect(() => {
+		const timePeriod = searchParams.get('period');
+		if (!timePeriod) setTimePeriod('24h');
+	}, [searchParams, setTimePeriod]);
+
 	return (
-		<>
-			<Select onSelectionChange={onSelectionChange} selectedKey={timePeriod}>
-				{validTimePeriods.map((val) => (
-					<SelectItem key={val} id={val} className="w-[6ch] overflow-hidden">
-						{val}
-					</SelectItem>
-				))}
-				<SelectItem id="custom-period">Custom</SelectItem>
+		<section {...props}>
+			<Select defaultSelectedKey={timePeriod ?? 0} onSelectionChange={onSelectionChange}>
+				<Button className="flex h-10 w-72 items-center gap-3 rounded-md px-4 py-2 text-sm font-semibold ring-1 ring-neutral-700">
+					<LuCalendar className="size-5" />
+					{timePeriod === 'custom' && from && to ? (
+						<span>
+							{formatDate(getDate(from))} - {formatDate(getDate(to))}
+						</span>
+					) : (
+						<SelectValue />
+					)}
+					<LuChevronDown className="ml-auto size-5" />
+				</Button>
+				<Popover>
+					<ListBox className="w-72 rounded-md bg-dark text-sm font-medium ring-1 ring-neutral-700">
+						<ListBoxItem id="24h">Last 24h</ListBoxItem>
+						<ListBoxItem id="7d">Last week</ListBoxItem>
+						<ListBoxItem id="1m">Last month</ListBoxItem>
+						<ListBoxItem id="6m">Last 6 months</ListBoxItem>
+						<ListBoxItem id="1y">Last 1 year</ListBoxItem>
+						<ListBoxItem id="custom">Custom</ListBoxItem>
+					</ListBox>
+				</Popover>
 			</Select>
-			{showDatePicker && <DateRangePicker onChange={(val) => {}} defaultOpen />}
-		</>
+			<DateRangePicker
+				granularity="day"
+				isOpen={showDatePicker}
+				defaultValue={{
+					start: fromDatetoZonedDate(new Date(from ?? Date.now()), '+00:00'),
+					end: fromDatetoZonedDate(new Date(to ?? Date.now()), '+00:00'),
+				}}
+				onChange={({ start, end }) => {
+					setShowDatePicker(false);
+					setTimePeriod('custom');
+					setFromDate(start.toAbsoluteString());
+					setToDate(end.toAbsoluteString());
+				}}
+				onOpenChange={setShowDatePicker}
+			/>
+		</section>
 	);
 };

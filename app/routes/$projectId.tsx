@@ -1,7 +1,14 @@
 import 'chart.js/auto';
 
 import { LoaderFunctionArgs, redirect } from '@remix-run/node';
-import { Outlet, useLoaderData, useLocation, useNavigate, useSearchParams } from '@remix-run/react';
+import {
+	Outlet,
+	useLoaderData,
+	useLocation,
+	useNavigate,
+	useParams,
+	useSearchParams,
+} from '@remix-run/react';
 import { ComponentPropsWithRef } from 'react';
 import {
 	LuAlertTriangle,
@@ -14,6 +21,7 @@ import { TbWorldSearch } from 'react-icons/tb';
 import { z } from 'zod';
 
 import { ProjectSelect } from '~/components/atoms/project-select';
+import { TimePeriodSelect } from '~/components/atoms/time-period-select';
 import { Tab, TabList, Tabs } from '~/components/react-aria/Tabs';
 import { User } from '~/components/user';
 import { projectsCollection } from '~/utils/database.server';
@@ -31,70 +39,74 @@ const StyledTab = ({ children, className, ...rest }: ComponentPropsWithRef<typeo
 
 export const loader = async (args: LoaderFunctionArgs) => {
 	const projectId = z.string().parse(args.params.projectId);
-	const project = await projectsCollection.findOne({ id: projectId });
-	if (!project) return redirect('/not-found');
-	return { project };
+	const [project, projects] = await Promise.all([
+		projectsCollection.findOne({ id: projectId }),
+		projectsCollection.find().toArray(),
+	]);
+	return project ? { projects } : redirect('/not-found');
 };
 
 export default function Route() {
 	const navigate = useNavigate();
 	const { pathname } = useLocation();
 	const [searchParams] = useSearchParams();
-	const { project } = useLoaderData<typeof loader>();
+	const { projectId } = useParams();
+	const { projects } = useLoaderData<typeof loader>();
 
 	return (
 		<>
-			<nav className="bg-neutral-500/5 p-2 pb-0">
-				<div className="flex">
-					<ProjectSelect className="mx-auto" />
-					<User />
+			<nav className="flex w-full bg-neutral-500/5 p-2 pb-0">
+				<div className="mx-auto my-2 flex flex-col items-center gap-4">
+					<div className="mx-auto flex gap-3">
+						<ProjectSelect projects={projects} />
+						<span className="text-2xl">/</span>
+						<TimePeriodSelect />
+					</div>
+					<Tabs
+						onSelectionChange={(key) =>
+							navigate(
+								{
+									pathname: key.toString(),
+									search: searchParams.toString(),
+								},
+								{
+									unstable_viewTransition: true,
+								},
+							)
+						}
+						selectedKey={pathname}
+						className="flex w-full flex-col items-center"
+					>
+						{/* <LogoText className="scale-[0.8]" /> */}
+						<TabList className="flex">
+							<StyledTab id={`/${projectId}/overview`}>
+								<LuLayoutGrid />
+								<span>Overview</span>
+							</StyledTab>
+							<StyledTab id={`/${projectId}/seo`}>
+								<TbWorldSearch />
+								<span>SEO</span>
+							</StyledTab>
+							<StyledTab id={`/${projectId}/events`}>
+								<LuMousePointer2 />
+								<span>Events</span>
+							</StyledTab>
+							<StyledTab id={`/${projectId}/errors`}>
+								<LuAlertTriangle />
+								<span>Errors</span>
+							</StyledTab>
+							<StyledTab id={`/${projectId}/settings`}>
+								<LuSettings />
+								<span>Settings</span>
+							</StyledTab>
+							<StyledTab id="/">
+								<LuLayers />
+								<span>Projects</span>
+							</StyledTab>
+						</TabList>
+					</Tabs>
 				</div>
-				<Tabs
-					onSelectionChange={(key) =>
-						navigate(
-							{
-								pathname: key.toString(),
-								search: searchParams.toString(),
-							},
-							{
-								unstable_viewTransition: true,
-							},
-						)
-					}
-					selectedKey={pathname}
-					className="flex w-full flex-col items-center"
-				>
-					{/* <LogoText className="scale-[0.8]" /> */}
-					<TabList className="flex">
-						<StyledTab id={`/${project.id}/overview`}>
-							<LuLayoutGrid />
-							<span>Overview</span>
-						</StyledTab>
-						<StyledTab id={`/${project.id}/seo`}>
-							<TbWorldSearch />
-							<span>SEO</span>
-						</StyledTab>
-						<StyledTab id={`/${project.id}/events`}>
-							<LuMousePointer2 />
-							<span>Events</span>
-						</StyledTab>
-						<StyledTab id={`/${project.id}/errors`}>
-							<LuAlertTriangle />
-							<span>Errors</span>
-						</StyledTab>
-						<StyledTab id={`/${project.id}/settings`}>
-							<LuSettings />
-							<span>Settings</span>
-						</StyledTab>
-						<StyledTab id="/">
-							<LuLayers />
-							<span>Projects</span>
-						</StyledTab>
-					</TabList>
-				</Tabs>
-				{/* <span className="w-full text-start text-xs font-light text-neutral-400">
-					v{import.meta.env.VITE_VERSION}
-				</span> */}
+				<User />
 			</nav>
 			<Outlet />
 		</>

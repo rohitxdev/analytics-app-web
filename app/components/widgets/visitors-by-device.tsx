@@ -4,12 +4,16 @@ import { z } from 'zod';
 
 import { browserSchema, osSchema, platformSchema } from '~/schemas/events';
 
+import { BarGraph } from '../atoms/bar-graph';
 import { Icon } from '../atoms/icon';
 import { Widget } from '../atoms/widget';
-import { BarGraph } from './top-stats';
 
-const IconWithShadow = ({ style, ...rest }: ComponentProps<typeof Icon>) => (
-	<Icon style={{ filter: 'drop-shadow(0 4px 4px rgb(0 0 0 / 0.25))', ...style }} {...rest} />
+const IconWithShadow = ({ style, className, ...rest }: ComponentProps<typeof Icon>) => (
+	<Icon
+		className={`animate-fade-in ${className}`}
+		style={{ filter: 'drop-shadow(0 4px 4px rgb(0 0 0 / 0.25))', ...style }}
+		{...rest}
+	/>
 );
 
 interface VisitorsByDeviceProps {
@@ -20,48 +24,71 @@ interface VisitorsByDeviceProps {
 	};
 }
 
+const types = ['browsers', 'platforms', 'os'] as const;
+
 export const VisitorsByDevice = ({
 	data: { visitorsByBrowser, visitorsByOs, visitorsByPlatform },
 }: VisitorsByDeviceProps) => {
 	return (
-		<Widget.Container className="flex flex-col gap-2 rounded-lg bg-white/5 p-4 text-center">
+		<Widget.Container className="w-screen max-w-[600px]">
 			<Tabs className="flex flex-col gap-4">
-				<div className="flex justify-between">
-					<Widget.Title>Users by device</Widget.Title>
+				<div className="flex items-center justify-between">
+					<Widget.Title>Visitors by Device</Widget.Title>
 					<TabList className="flex cursor-pointer gap-4 text-sm">
-						<Tab id="browsers" className="font-semibold selected:text-indigo-500">
+						<Tab id={types[0]} className="font-semibold selected:text-indigo-500">
 							Browsers
 						</Tab>
-						<Tab id="platforms" className="font-semibold selected:text-indigo-500">
+						<Tab id={types[1]} className="font-semibold selected:text-indigo-500">
 							Platforms
 						</Tab>
-						<Tab id="os" className="font-semibold selected:text-indigo-500">
+						<Tab id={types[2]} className="font-semibold selected:text-indigo-500">
 							OS
 						</Tab>
 					</TabList>
 				</div>
 				<TabPanel id="browsers">
 					<BarGraph
-						className="border-none bg-transparent"
-						style={{ padding: 0 }}
+						className="border-none bg-transparent !p-0"
+						leftTitle="Browser"
+						rightTitle="Views"
 						data={visitorsByBrowser}
-						labelIcon={(key) => <IconWithShadow name={key} className="size-6 object-contain" />}
+						barContent={({ key }) => (
+							<>
+								<IconWithShadow name={key} className="size-6 object-contain" />
+								<p className="animate-fade-in overflow-hidden text-ellipsis font-semibold">{key}</p>
+							</>
+						)}
+						onlyGraph
 					/>
 				</TabPanel>
 				<TabPanel id="platforms">
 					<BarGraph
-						className="border-none bg-transparent"
-						style={{ padding: 0 }}
+						className="border-none bg-transparent !p-0"
+						leftTitle="Platform"
+						rightTitle="Views"
 						data={visitorsByPlatform}
-						labelIcon={(key) => <IconWithShadow name={key} className="size-6 object-contain" />}
+						barContent={({ key }) => (
+							<>
+								<IconWithShadow name={key} className="size-6 object-contain" />
+								<p className="animate-fade-in overflow-hidden text-ellipsis font-semibold">{key}</p>
+							</>
+						)}
+						onlyGraph
 					/>
 				</TabPanel>
 				<TabPanel id="os">
 					<BarGraph
-						className="border-none bg-transparent"
-						style={{ padding: 0 }}
+						className="border-none bg-transparent !p-0"
+						leftTitle="Operating System"
+						rightTitle="Views"
 						data={visitorsByOs}
-						labelIcon={(key) => <IconWithShadow name={key} className="size-6 object-contain" />}
+						barContent={({ key }) => (
+							<>
+								<IconWithShadow name={key} className="size-6 object-contain" />
+								<p className="animate-fade-in overflow-hidden text-ellipsis font-semibold">{key}</p>
+							</>
+						)}
+						onlyGraph
 					/>
 				</TabPanel>
 			</Tabs>

@@ -1,55 +1,51 @@
-import { useFetcher, useParams } from '@remix-run/react';
-import { ComponentPropsWithRef, useEffect } from 'react';
-import { Button, ComboBox, Input, ListBox, ListBoxItem, Popover } from 'react-aria-components';
+import { useParams } from '@remix-run/react';
+import { ComponentPropsWithRef } from 'react';
+import { Button, ListBox, ListBoxItem, Popover, Select, SelectValue } from 'react-aria-components';
 import { LuChevronDown } from 'react-icons/lu';
+import { z } from 'zod';
 
+import { projectSchema } from '~/schemas/events';
 import { getFaviconUrl } from '~/utils/misc';
 
-export const ProjectSelect = (props: ComponentPropsWithRef<'div'>) => {
-	const fetcher = useFetcher();
-	const { projectId } = useParams();
-	const projects = fetcher.data?.projects ?? [];
+interface ProjectSelectProps extends ComponentPropsWithRef<'div'> {
+	projects: z.infer<typeof projectSchema>[];
+}
 
-	useEffect(() => {
-		fetcher.load('/?index');
-	}, []);
+export const ProjectSelect = ({ projects, ...rest }: ProjectSelectProps) => {
+	const { projectId } = useParams();
 
 	return (
-		<div {...props}>
-			<ComboBox
-				onSelectionChange={(key) => {
-					window.location.href = '/' + key?.toString();
-				}}
+		<div {...rest}>
+			<Select
 				defaultSelectedKey={projectId}
+				onSelectionChange={(key) => {
+					window.location.href = `/${key?.toString() ?? projectId}/overview`;
+				}}
 			>
-				<div>
-					<Input className="rounded-md bg-white/10 px-2 py-1" />
-					<Button>
-						<LuChevronDown className="ml-2 inline scale-125" strokeWidth={3} />
-					</Button>
-				</div>
+				<Button className="flex h-10 w-64 items-center gap-3 rounded-md px-4 py-2 text-sm font-semibold ring-1 ring-neutral-700">
+					<SelectValue />
+					<LuChevronDown className="ml-auto size-5" />
+				</Button>
 				<Popover>
-					<ListBox className="w-[20ch] rounded-md bg-dark ring-1 ring-white/30 [&>*:focus]:bg-white/10">
-						{projects.map((item, i) => (
+					<ListBox className="w-64 rounded-md bg-dark text-sm font-medium ring-1 ring-neutral-700">
+						{projects.map((item) => (
 							<ListBoxItem
+								className="flex h-10 items-center rounded-md px-4 outline-none focus:bg-neutral-800"
 								key={item.id}
 								id={item.id}
 								textValue={item.name}
-								className="rounded-md focus:bg-white/20"
 							>
 								<img
-									src={getFaviconUrl(item.baseUrl.replace('https://', ''))}
+									className="mr-3 inline size-6"
+									src={getFaviconUrl(new URL(item.baseUrl).hostname)}
 									alt=""
-									className="mr-2 inline p-2"
-									height={48}
-									width={48}
 								/>
 								<span>{item.name}</span>
 							</ListBoxItem>
 						))}
 					</ListBox>
 				</Popover>
-			</ComboBox>
+			</Select>
 		</div>
 	);
 };

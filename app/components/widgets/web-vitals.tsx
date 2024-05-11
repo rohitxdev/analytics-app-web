@@ -39,7 +39,7 @@ export const WebVitals = () => {
 
 	console.log(fcp, ttfb, lcp, cls, fid, inp);
 	return (
-		<Widget.Container className="flex flex-col gap-2 rounded-lg bg-white/5 p-4 text-center font-semibold">
+		<Widget.Container className="flex flex-col gap-2">
 			<Widget.Title>
 				<PiLightning />
 				Web Vitals

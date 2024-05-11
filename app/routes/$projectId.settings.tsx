@@ -13,13 +13,13 @@ import toast from 'react-hot-toast';
 import { LiaEditSolid } from 'react-icons/lia';
 import { LuLogOut, LuSave } from 'react-icons/lu';
 
+import { Switch } from '~/components/atoms/inputs';
 import { Tooltip } from '~/components/react-aria/Tooltip';
 import { userPreferencesSchema } from '~/schemas/auth';
 import { getSession, getUserFromSession } from '~/utils/auth.server';
 import { usersCollection } from '~/utils/database.server';
 import { useUser } from '~/utils/hooks';
 
-import { Switch } from '../components/atoms/switch';
 import { Select, SelectItem } from '../components/react-aria/Select';
 
 export const action = async (args: ActionFunctionArgs) => {

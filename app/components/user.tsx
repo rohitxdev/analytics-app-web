@@ -1,7 +1,7 @@
 import { Form } from '@remix-run/react';
 import { ComponentProps, useState } from 'react';
 import { Button, Dialog, DialogTrigger, OverlayArrow, Popover } from 'react-aria-components';
-import { FaUser, FaUsers } from 'react-icons/fa';
+import { FaUser } from 'react-icons/fa';
 import { LuChevronDown, LuLogOut } from 'react-icons/lu';
 
 import { useUser } from '~/utils/hooks';
@@ -32,9 +32,6 @@ export const User = ({ className, ...rest }: ComponentProps<'section'>) => {
 						<Dialog className="flex flex-col rounded-md bg-neutral-200 py-1 text-sm font-semibold text-dark *:px-4 *:py-2">
 							<Button>
 								<FaUser className="mr-2 inline" size={20} /> Account
-							</Button>
-							<Button>
-								<FaUsers className="mr-2 inline" size={20} /> Teams
 							</Button>
 							<Form method="POST" action="/auth/log-out">
 								<Button type="submit" className="w-full">

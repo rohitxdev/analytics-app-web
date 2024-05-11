@@ -21,7 +21,8 @@ export const loader = async (args: LoaderFunctionArgs) => {
 
 	const session = await getSession(args.request.headers.get('Cookie'));
 	const user = await getUserFromSession(session);
-	return user ? { user } : redirect('/auth/log-in');
+	const locale = args.request.headers.get('Accept-Language')?.split(',')[0] ?? 'en-GB';
+	return user ? { user, locale } : redirect('/auth/log-in');
 };
 
 export default function App() {
@@ -58,7 +59,7 @@ export default function App() {
 				<Links />
 			</head>
 			<StrictMode>
-				<body className="grid min-h-screen bg-dark font-inter text-white">
+				<body className="grid min-h-screen content-start justify-items-center bg-dark font-inter text-white">
 					<Toaster />
 					<Outlet />
 					<ScrollRestoration />
