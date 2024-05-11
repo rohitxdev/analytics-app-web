@@ -110,7 +110,7 @@ export const TimePeriodSelect = (props: TimePeriodSelectProps) => {
 
 	return (
 		<section {...props}>
-			<Select defaultSelectedKey={timePeriod ?? 0} onSelectionChange={onSelectionChange}>
+			<Select defaultSelectedKey={timePeriod ?? '24h'} onSelectionChange={onSelectionChange}>
 				<Button className="flex h-10 w-72 items-center gap-3 rounded-md px-4 py-2 text-sm font-semibold ring-1 ring-neutral-700">
 					<LuCalendar className="size-5" />
 					{timePeriod === 'custom' && from && to ? (

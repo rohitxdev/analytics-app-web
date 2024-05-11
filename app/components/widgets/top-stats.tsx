@@ -34,6 +34,7 @@ export const TopSources = ({ data, ...rest }: TopStatsProps) => {
 	);
 };
 
+
 export const TopPages = ({ data, ...rest }: TopStatsProps) => {
 	return (
 		<BarGraph

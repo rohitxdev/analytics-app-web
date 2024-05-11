@@ -8,36 +8,53 @@ import { Tooltip } from '~/components/react-aria/Tooltip';
 
 import { Widget } from '../atoms/widget';
 
+interface WebVitalMetric {
+	value: number;
+	rating: string;
+}
+
 export const WebVitals = () => {
-	const [fcp, setFcp] = useState<{ value: number; rating: string } | null>(null);
-	const [ttfb, setTtfb] = useState<{ value: number; rating: string } | null>(null);
-	const [lcp, setLcp] = useState<{ value: number; rating: string } | null>(null);
-	const [cls, setCls] = useState<{ value: number; rating: string } | null>(null);
-	const [fid, setFid] = useState<{ value: number; rating: string } | null>(null);
-	const [inp, setInp] = useState<{ value: number; rating: string } | null>(null);
+	const [fcp, setFcp] = useState<WebVitalMetric | null>(null);
+	const [ttfb, setTtfb] = useState<WebVitalMetric | null>(null);
+	const [lcp, setLcp] = useState<WebVitalMetric | null>(null);
+	const [cls, setCls] = useState<WebVitalMetric | null>(null);
+	const [fid, setFid] = useState<WebVitalMetric | null>(null);
+	const [inp, setInp] = useState<WebVitalMetric | null>(null);
 
 	useEffect(() => {
 		onFCP((metric) => {
-			setFcp({ value: metric.value, rating: metric.rating });
+			console.log(metric);
+			setFcp(metric);
 		});
 		onTTFB((metric) => {
-			setTtfb({ value: metric.value, rating: metric.rating });
+			console.log(metric);
+
+			setTtfb(metric);
 		});
 		onLCP((metric) => {
-			setLcp({ value: metric.value, rating: metric.rating });
+			console.log(metric);
+
+			setLcp(metric);
 		});
 		onCLS((metric) => {
-			setCls({ value: metric.value, rating: metric.rating });
+			console.log(metric);
+
+			setCls(metric);
 		});
 		onFID((metric) => {
-			setFid({ value: metric.value, rating: metric.rating });
+			console.log(metric);
+
+			setFid(metric);
 		});
 		onINP((metric) => {
-			setInp({ value: metric.value, rating: metric.rating });
+			console.log(metric);
+
+			setInp(metric);
 		});
 	}, []);
 
-	console.log(fcp, ttfb, lcp, cls, fid, inp);
+	const percent = 56;
+
 	return (
 		<Widget.Container className="flex flex-col gap-2">
 			<Widget.Title>
@@ -72,6 +89,16 @@ export const WebVitals = () => {
 				<li>INP: {inp?.value}</li>
 				<li>CLS: {cls?.value.toPrecision(1)}</li>
 			</ul>
+			<div
+				className="size-32 rounded-full p-4"
+				style={{
+					backgroundImage: `conic-gradient(rgb(96, 231, 89) ${(percent / 100) * 180}deg, rgb(83, 82, 82) ${(percent / 100) * 180}deg)`,
+				}}
+			>
+				<div className="flex size-full items-center justify-center rounded-full bg-neutral-900">
+					<span className="text-2xl font-bold tabular-nums">{percent}%</span>
+				</div>
+			</div>
 		</Widget.Container>
 	);
 };
