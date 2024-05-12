@@ -17,13 +17,15 @@ import { Line, LineChart, ResponsiveContainer, XAxis, YAxis } from 'recharts';
 import { ToggleButton } from '~/components/atoms/inputs';
 import { Pagination } from '~/components/atoms/pagination';
 import { errorEventsCollection } from '~/utils/database.server';
+import { useLocale } from '~/utils/hooks';
 import { getRandomNumber } from '~/utils/numbers';
 
-const tFormatter = new Intl.DateTimeFormat('en-GB', {
-	dateStyle: 'medium',
-	timeStyle: 'long',
-	hourCycle: 'h24',
-});
+const formatTime = (date: Date, locale: string) =>
+	date.toLocaleString(locale, {
+		dateStyle: 'medium',
+		timeStyle: 'long',
+		hourCycle: 'h24',
+	});
 
 export const loader = async (args: LoaderFunctionArgs) => {
 	const projectId = args.params.projectId;
@@ -44,6 +46,7 @@ export default function Route() {
 	const data = useLoaderData<typeof loader>();
 	const [currentPage, setCurrentPage] = useState(1);
 	const totalPages = 10;
+	const locale = useLocale();
 
 	return (
 		<div className="flex w-full flex-col items-center gap-4 p-4">
@@ -89,7 +92,7 @@ export default function Route() {
 							>
 								<Cell className="text-red-400">{val.name}</Cell>
 								<Cell className="max-w-30 overflow-hidden text-ellipsis">{val.description}</Cell>
-								<Cell>{tFormatter.format(new Date(val.timestamp))}</Cell>
+								<Cell>{formatTime(new Date(val.timestamp), locale)}</Cell>
 								<Cell>/dash</Cell>
 								<Cell>{val?.severityLevel ?? 1}</Cell>
 								<Cell>

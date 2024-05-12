@@ -58,7 +58,7 @@ export default function Route() {
 		<>
 			<nav className="flex w-full items-center border-b border-neutral-700 bg-neutral-500/5 px-8 py-2 pb-0">
 				<Link
-					className="group flex items-center gap-1 py-1 text-lg font-semibold underline-offset-4 hover:underline"
+					className="group flex items-center gap-2 py-1 text-lg font-semibold underline-offset-4 hover:underline"
 					to="/"
 				>
 					<LuArrowLeft

@@ -11,7 +11,7 @@ import { getSession, getUserFromSession } from '~/utils/auth.server';
 
 // eslint-disable-next-line import/default
 import sdkUrl from './sdk?url';
-import { logDoge } from './utils/misc';
+import { LOCALE_UK, logDoge } from './utils/misc';
 
 const excludedPaths = ['/auth', '/not-found'];
 
@@ -21,7 +21,7 @@ export const loader = async (args: LoaderFunctionArgs) => {
 
 	const session = await getSession(args.request.headers.get('Cookie'));
 	const user = await getUserFromSession(session);
-	const locale = args.request.headers.get('Accept-Language')?.split(',')[0] ?? 'en-GB';
+	const locale = args.request.headers.get('Accept-Language')?.split(',')[0] ?? LOCALE_UK;
 	return user ? { user, locale } : redirect('/auth/log-in');
 };
 

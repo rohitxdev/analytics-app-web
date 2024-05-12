@@ -2,6 +2,7 @@ import { useRouteLoaderData } from '@remix-run/react';
 import { useEffect, useState } from 'react';
 
 import { loader } from '../root';
+import { LOCALE_UK } from './misc';
 
 export const useRootLoader = () => useRouteLoaderData<typeof loader>('root');
 
@@ -12,7 +13,7 @@ export const useUser = () => {
 
 export const useLocale = () => {
 	const data = useRootLoader();
-	return data?.locale ?? 'en-GB';
+	return data?.locale ?? LOCALE_UK;
 };
 
 export const usePointer = (element: HTMLElement | null) => {

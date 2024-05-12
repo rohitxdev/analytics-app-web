@@ -1,5 +1,7 @@
 import { z, ZodError, ZodSchema } from 'zod';
 
+export const LOCALE_UK = 'en-GB';
+
 export const logDoge = () => {
 	console.info(
 		`%c         ▄              ▄    
@@ -72,7 +74,7 @@ export const parseFormData = (formData: FormData, schema: ZodSchema) => {
 	}
 };
 
-const locale = typeof navigator !== 'undefined' ? navigator.language : 'en-GB';
+const locale = typeof navigator !== 'undefined' ? navigator.language : LOCALE_UK;
 const cutoffs = [60, 3600, 86400, 86400 * 7, 86400 * 30, 86400 * 365, Infinity] as const;
 const timeUnits: Intl.RelativeTimeFormatUnit[] = [
 	'second',
@@ -97,8 +99,6 @@ export const getRelativeTimeString = (date: Date | number) => {
 
 	return rtf.format(Math.floor(deltaSeconds / (divisor ?? 1)), timeUnits[unitIndex] ?? 'year');
 };
-
-export const timeFormatter = new Intl.DateTimeFormat(locale, { timeStyle: 'short' });
 
 export const getFaviconUrl = (domain: string, size?: number) => {
 	const url = new URL('https://www.google.com/s2/favicons');

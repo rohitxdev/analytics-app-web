@@ -13,6 +13,7 @@ import {
 import { LuCalendar, LuCheck, LuChevronDown } from 'react-icons/lu';
 
 import { DateRangePicker } from '~/components/react-aria/DateRangePicker';
+import { useLocale } from '~/utils/hooks';
 import { TimePeriod, timePeriodSchema } from '~/utils/misc';
 
 const timePeriodToDate = (timePeriod: TimePeriod) => {
@@ -39,7 +40,8 @@ const timePeriodToDate = (timePeriod: TimePeriod) => {
 	return date;
 };
 
-const formatDate = (date: Date) => date.toLocaleDateString('en-GB', { dateStyle: 'short' });
+const formatDate = (date: Date, locale: string) =>
+	date.toLocaleDateString(locale, { dateStyle: 'short' });
 const getDate = (dateString: string) => new Date(dateString);
 
 const ListBoxItem = ({ children, className, ...rest }: ComponentProps<typeof AriaListBoxItem>) => (
@@ -62,6 +64,7 @@ export const TimePeriodSelect = (props: TimePeriodSelectProps) => {
 	const from = searchParams.get('from');
 	const to = searchParams.get('to');
 	const [showDatePicker, setShowDatePicker] = useState(false);
+	const locale = useLocale();
 
 	const setTimePeriod = useCallback(
 		(timePeriod: TimePeriod) => {
@@ -115,7 +118,7 @@ export const TimePeriodSelect = (props: TimePeriodSelectProps) => {
 					<LuCalendar className="size-5" />
 					{timePeriod === 'custom' && from && to ? (
 						<span>
-							{formatDate(getDate(from))} - {formatDate(getDate(to))}
+							{formatDate(getDate(from), locale)} - {formatDate(getDate(to), locale)}
 						</span>
 					) : (
 						<SelectValue />
