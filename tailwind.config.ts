@@ -9,6 +9,7 @@ export default {
 			fontFamily: {
 				inter: 'Inter, sans-serif',
 				rubik: 'Rubik, sans-serif',
+				satoshi: 'Satoshi, sans-serif',
 			},
 			fontSize: {
 				'2xs': '0.65rem',

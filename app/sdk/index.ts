@@ -2,115 +2,79 @@
 //TODO: Fix session duration tracker for CMD+TAB / ALT+TAB
 
 import { onCLS, onFCP, onFID, onINP, onLCP, onTTFB } from 'web-vitals';
-import { z } from 'zod';
 
-import { SessionMap } from './session-map';
+import { ClientSession } from './session-map';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-const projectId = new URL(location.href).searchParams.get('projectId');
+interface Session {
+	id: string;
+	projectId: string;
+	startTime: number;
+	endTime: number;
+	currentPath: string;
+}
 
-const sessionSchema = z.object({
-	sessionId: z.string().min(1),
-	sessionTimeoutInSeconds: z.number().min(1),
-	previousPath: z.string().min(1).optional(),
-});
+const session = new ClientSession<keyof Session, Session[keyof Session]>('session');
 
-type Session = z.infer<typeof sessionSchema>;
-
-const session = new SessionMap<keyof Session, Session[keyof Session]>('session');
-
-const startSessionResponseSchema = z.object({
-	sessionId: z.string().min(1),
-	sessionTimeoutInSeconds: z.number(),
-});
-
-const startSession = async () => {
-	try {
-		const res = await fetch(API_URL + '/session/start', {
-			method: 'POST',
-			body: JSON.stringify({
-				projectId: projectId,
-				referrer: document.referrer,
-				userAgent: navigator.userAgent,
-				startTime: Date.now(),
-			}),
-			headers: {
-				'Content-Type': 'application/json',
-			},
-		});
-		const data = startSessionResponseSchema.parse(await res.json());
-		session.set('sessionId', data.sessionId);
-		session.set('sessionTimeoutInSeconds', data.sessionTimeoutInSeconds);
-	} catch (err) {
-		console.error(err);
-	}
+const startSession = async (): Promise<string> => {
+	const sessionId = session.get('id');
+	if (sessionId) return sessionId as string;
+	const res = await fetch(API_URL + '/session/start', {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({
+			projectId: document.querySelector('script[data-vorp-id]')?.getAttribute('data-vorp-id'),
+			referer: new URL(document.referrer || location.href).hostname,
+			userAgent: navigator.userAgent,
+			startTime: Date.now(),
+		}),
+	});
+	const data = await res.json();
+	session.set('id', data.sessionId);
+	return data.sessionId as string;
 };
 
 const endSession = async () => {
-	const sessionId = session.get('sessionId');
+	const sessionId = session.get('id');
 	if (!sessionId) return;
 
 	navigator.sendBeacon(
 		API_URL + '/session/end',
 		JSON.stringify({
-			projectId: projectId,
-			sessionId: sessionId,
+			sessionId,
 			endTime: Date.now(),
 		}),
 	);
-	sessionStorage.removeItem('session');
+	session.clear();
 };
 
-window.onbeforeunload = () => {
-	const performanceEntry = window?.performance?.getEntriesByType('navigation')?.at(-1);
-	if (!performanceEntry) return;
+const capturePageVisitEvent = async () => {
+	const sessionId = session.get('id');
+	if (!sessionId) return;
 
-	const navigationType = (performanceEntry as PerformanceNavigationTiming).type;
-	if (navigationType !== 'navigate') return;
-
-	endSession();
-};
-
-const fireViewEvent = async () => {
-	await fetch(API_URL + '/events/views', {
-		method: 'POST',
-		body: JSON.stringify({
-			projectId: projectId,
-			path: location.pathname,
-			referrer: new URL(document.referrer || location.href).hostname,
-			timestamp: new Date().toISOString(),
-			userAgent: navigator.userAgent,
-		}),
-		headers: { 'Content-Type': 'application/json', 'User-Agent': navigator.userAgent },
-	});
-};
-
-window.onerror = (_event, _source, lineNo, colNo, error) => {
-	fetch(API_URL + '/events/errors', {
-		method: 'POST',
-		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify({
-			projectId: projectId,
-			name: error?.name,
-			description: error?.message,
-			stackTrace: `error occurred at line ${lineNo}, column ${colNo}. ${error?.stack}`,
-			timestamp: new Date().toISOString(),
-		}),
-	});
-};
-
-document.onvisibilitychange = () => {
-	const sessionTimeoutInSeconds = session.get('sessionTimeoutInSeconds');
-	let timerId: number | null = null;
-
-	if (document.visibilityState === 'hidden') {
-		timerId = window.setTimeout(
-			() => {
-				endSession();
+	const path = window.location.pathname;
+	if (path !== session.get('currentPath')) {
+		session.set('currentPath', path);
+		await fetch(API_URL + '/session/page-visit', {
+			method: 'POST',
+			body: JSON.stringify({
+				sessionId,
+				path: path,
+				timestamp: new Date().toISOString(),
+			}),
+			headers: {
+				'Content-Type': 'application/json',
 			},
-			(sessionTimeoutInSeconds as number) * 1000,
-		);
+		});
+	}
+};
+
+let timerId: number | null = null;
+
+const watchSession = () => {
+	if (document.visibilityState === 'hidden') {
+		timerId = window.setTimeout(endSession, 30 * 1000);
 		return;
 	}
 
@@ -119,31 +83,51 @@ document.onvisibilitychange = () => {
 		timerId = null;
 	}
 
-	if (!session.has('sessionId')) {
+	if (!session.has('id')) {
 		startSession();
-		fireViewEvent();
 	}
 };
 
-window.addEventListener('load', () => {
+startSession().then((sessionId) => {
+	//Watch web vitals
 	onCLS(console.log);
 	onFID(console.log);
 	onLCP(console.log);
 	onFCP(console.log);
 	onINP(console.log);
 	onTTFB(console.log);
-	fireViewEvent().catch(console.log);
 
-	if (!session.has('sessionId')) {
-		startSession();
-	}
+	//Watch navigation
+	capturePageVisitEvent();
+	setInterval(capturePageVisitEvent, 1000);
 
-	if (session.has('previousPath')) {
-		const currentPath = location.pathname;
-		const previousPath = session.get('previousPath')?.toString();
-		if (currentPath !== previousPath) {
-			fireViewEvent();
-		}
-	}
-	session.set('previousPath', location.pathname);
+	//Watch session
+	document.addEventListener('visibilitychange', watchSession);
+
+	//Watch errors
+	window.onerror = (_event, _source, _lineNo, _colNo, error) => {
+		if (!error) return;
+		fetch(API_URL + '/session/error', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify({
+				sessionId,
+				name: error?.name,
+				description: error?.message,
+				stackTrace: error?.stack,
+				timestamp: new Date().toISOString(),
+			}),
+		});
+	};
+
+	window.onbeforeunload = () => {
+		const performanceEntry = window?.performance?.getEntriesByType('navigation')?.at(-1);
+		if (!performanceEntry) return;
+
+		if ((performanceEntry as PerformanceNavigationTiming).type !== 'navigate') return;
+
+		endSession();
+	};
 });

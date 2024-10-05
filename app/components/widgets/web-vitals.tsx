@@ -56,7 +56,7 @@ export const WebVitals = () => {
 	const percent = 56;
 
 	return (
-		<Widget.Container className="flex flex-col gap-2">
+		<Widget.Container className="flex flex-col">
 			<Widget.Title>
 				<PiLightning />
 				Web Vitals

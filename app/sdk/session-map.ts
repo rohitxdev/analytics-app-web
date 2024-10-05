@@ -1,4 +1,4 @@
-export class SessionMap<K, V> {
+export class ClientSession<K, V> {
 	#map: Map<K, V>;
 	#sessionStorageId: string;
 
@@ -44,6 +44,7 @@ export class SessionMap<K, V> {
 	}
 
 	clear() {
+		sessionStorage.removeItem(this.#sessionStorageId);
 		return this.#map.clear();
 	}
 

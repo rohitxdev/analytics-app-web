@@ -36,7 +36,7 @@ const Metric = ({ title, content, deltaPercent, isInverted }: MetricProps) => {
 
 export const Overview = () => {
 	return (
-		<Widget.Container className="flex aspect-[5/2] w-3/4 flex-col gap-8 p-6">
+		<Widget.Container className="flex aspect-[5/2] min-w-full flex-col gap-8 p-6">
 			<div className="flex divide-x-[1px] divide-neutral-400">
 				<Metric title="visitors" content="2.67k" deltaPercent={4} />
 				<Metric title="views" content="6.32k" deltaPercent={6} />

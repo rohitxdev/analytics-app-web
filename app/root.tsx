@@ -53,13 +53,13 @@ export default function App() {
 					rel="stylesheet"
 				></link>
 				<link rel="shortcut icon" href="/vorp-logo.svg" type="image/svg+xml" />
-				<script src={sdkUrl} async type="module" />
+				<script src={sdkUrl} data-vorp-id="4c2515c6" async type="module" />
 				<meta name="view-transition" content="same-origin" />
 				<Meta />
 				<Links />
 			</head>
 			<StrictMode>
-				<body className="grid min-h-screen content-start justify-items-center bg-dark font-inter text-white">
+				<body className="font-satoshi grid min-h-screen content-start bg-dark text-white">
 					<Toaster />
 					<Outlet />
 					<ScrollRestoration />

@@ -2,7 +2,7 @@ import { ActionFunctionArgs, json } from '@remix-run/node';
 import { Link, useFetcher, useLoaderData } from '@remix-run/react';
 import { Button, DialogTrigger, MenuTrigger } from 'react-aria-components';
 import { BsThreeDotsVertical } from 'react-icons/bs';
-import { LuFolderPlus, LuGlobe, LuPlus, LuX } from 'react-icons/lu';
+import { LuFolder, LuGlobe, LuPlus, LuX } from 'react-icons/lu';
 
 import { LogoText } from '~/components/atoms/texts';
 import { Dialog } from '~/components/react-aria/Dialog';
@@ -101,7 +101,7 @@ export default function Route() {
 	const projects = data.projects;
 
 	return (
-		<section className="flex size-full flex-col gap-4 p-4">
+		<section className="flex h-screen w-full flex-col gap-4 p-4">
 			<div className="flex items-center justify-between px-2 py-4">
 				<LogoText />
 				<User />
@@ -139,12 +139,12 @@ export default function Route() {
 					</Modal>
 				</DialogTrigger>
 			</div>
-			<div className="flex flex-wrap gap-4">
+			<div className="flex h-full flex-wrap items-start gap-4">
 				{projects.length > 0 ? (
 					projects.map((project) => <ProjectCard key={project.id} {...project} />)
 				) : (
 					<div className="flex size-full flex-col items-center justify-center gap-4">
-						<LuFolderPlus size={48} />
+						<LuFolder size={48} />
 						<p className="text-xl font-medium">No projects yet</p>
 					</div>
 				)}

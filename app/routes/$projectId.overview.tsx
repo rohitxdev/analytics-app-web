@@ -108,7 +108,7 @@ export default function Route() {
 	} = useLoaderData<typeof loader>();
 
 	return (
-		<div className="flex flex-wrap justify-center gap-4 p-4">
+		<div className="flex flex-wrap justify-start gap-4 p-4 *:flex-1">
 			<Overview />
 			<TopSources data={topSources} />
 			<TopPages data={topPages} />

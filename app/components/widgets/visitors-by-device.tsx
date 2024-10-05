@@ -1,5 +1,6 @@
 import { ComponentProps } from 'react';
 import { Tab, TabList, TabPanel, Tabs } from 'react-aria-components';
+import { MdDevices } from 'react-icons/md';
 import { z } from 'zod';
 
 import { browserSchema, osSchema, platformSchema } from '~/schemas/events';
@@ -10,7 +11,7 @@ import { Widget } from '../atoms/widget';
 
 const IconWithShadow = ({ style, className, ...rest }: ComponentProps<typeof Icon>) => (
 	<Icon
-		className={`animate-fade-in ${className}`}
+		className={`animate-fade-in shrink-0 ${className}`}
 		style={{ filter: 'drop-shadow(0 4px 4px rgb(0 0 0 / 0.25))', ...style }}
 		{...rest}
 	/>
@@ -30,10 +31,12 @@ export const VisitorsByDevice = ({
 	data: { visitorsByBrowser, visitorsByOs, visitorsByPlatform },
 }: VisitorsByDeviceProps) => {
 	return (
-		<Widget.Container className="w-screen max-w-[600px]">
+		<Widget.Container className="min-w-[400px]">
 			<Tabs className="flex flex-col gap-4">
 				<div className="flex items-center justify-between">
-					<Widget.Title>Visitors by Device</Widget.Title>
+					<Widget.Title>
+						<MdDevices className="mr-2 size-6" /> Visitors by Device
+					</Widget.Title>
 					<TabList className="flex cursor-pointer gap-4 text-sm">
 						<Tab id={types[0]} className="font-semibold selected:text-indigo-500">
 							Browsers
@@ -54,7 +57,7 @@ export const VisitorsByDevice = ({
 						data={visitorsByBrowser}
 						barContent={({ key }) => (
 							<>
-								<IconWithShadow name={key} className="size-6 object-contain" />
+								<IconWithShadow name={key} className="size-6 shrink-0 object-contain" />
 								<p className="animate-fade-in overflow-hidden text-ellipsis font-semibold">{key}</p>
 							</>
 						)}

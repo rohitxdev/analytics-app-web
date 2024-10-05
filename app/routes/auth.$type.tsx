@@ -228,7 +228,7 @@ export default function Route() {
 	const { state } = useNavigation();
 
 	return (
-		<div className="flex flex-col items-center justify-center gap-12 ring">
+		<div className="flex h-screen w-full flex-col items-center justify-center gap-12">
 			<Link
 				to="/"
 				className="absolute left-0 top-0 m-6 block size-12 rounded-full p-2 duration-200 ease-out hover:bg-white hover:text-black"

@@ -2,7 +2,6 @@ import 'chart.js/auto';
 
 import { LoaderFunctionArgs, redirect } from '@remix-run/node';
 import {
-	Link,
 	Outlet,
 	useLoaderData,
 	useLocation,
@@ -12,25 +11,19 @@ import {
 } from '@remix-run/react';
 import { ComponentPropsWithRef } from 'react';
 import { Tab as AriaTab, TabList, Tabs } from 'react-aria-components';
-import {
-	LuAlertTriangle,
-	LuArrowLeft,
-	LuLayoutGrid,
-	LuMousePointer2,
-	LuSettings,
-} from 'react-icons/lu';
+import { BsBarChart } from 'react-icons/bs';
+import { LuAlertTriangle, LuMousePointer2, LuSettings } from 'react-icons/lu';
 import { TbWorldSearch } from 'react-icons/tb';
 import { z } from 'zod';
 
 import { ProjectSelect } from '~/components/atoms/project-select';
-import { TimePeriodSelect } from '~/components/atoms/time-period-select';
 import { User } from '~/components/user';
 import { projectsCollection } from '~/utils/database.server';
 
 const Tab = ({ children, className, ...rest }: ComponentPropsWithRef<typeof AriaTab>) => {
 	return (
 		<AriaTab
-			className={`flex w-32 translate-y-[1px] cursor-pointer items-center justify-center gap-3 rounded-t-md border-x border-t border-transparent border-b-dark p-4 py-2 text-sm text-neutral-400 outline-none selected:border-neutral-700 selected:bg-dark selected:text-white [&>span]:font-semibold [&>svg]:size-6 ${className}`}
+			className={`flex w-full cursor-pointer items-center gap-3 rounded p-4 py-2 text-sm outline-none active:bg-neutral-800 hover:bg-neutral-800 selected:text-indigo-500 [&>span]:font-semibold [&>svg]:size-6 ${className}`}
 			{...rest}
 		>
 			{children}
@@ -55,24 +48,11 @@ export default function Route() {
 	const { projects } = useLoaderData<typeof loader>();
 
 	return (
-		<>
-			<nav className="flex w-full items-center border-b border-neutral-700 bg-neutral-500/5 px-8 py-2 pb-0">
-				<Link
-					className="group flex items-center gap-2 py-1 text-lg font-semibold underline-offset-4 hover:underline"
-					to="/"
-				>
-					<LuArrowLeft
-						className="duration-200 group-hover:-translate-x-1 group-hover:scale-105"
-						size={36}
-					/>
-					My Websites
-				</Link>
-				<div className="mx-auto mt-2 flex flex-col items-center gap-4">
-					<div className="mx-auto flex items-center gap-3">
-						<ProjectSelect projects={projects} />
-						<span className="text-2xl">/</span>
-						<TimePeriodSelect />
-					</div>
+		<div className="flex">
+			<nav className="flex w-64 shrink-0 ">
+				<div className="fixed flex h-screen flex-col items-stretch bg-neutral-500/5 ring-1 ring-neutral-700">
+					<ProjectSelect projects={projects} className="mx-auto my-4" />
+					{/* <TimePeriodSelect /> */}
 					<Tabs
 						onSelectionChange={(key) =>
 							navigate(
@@ -86,12 +66,13 @@ export default function Route() {
 							)
 						}
 						selectedKey={pathname}
-						className="flex w-full flex-col items-center"
+						className="flex w-64 flex-col items-start px-2"
 					>
+						<h2 className="mx-2 scale-90 text-xs font-extrabold text-neutral-400">PROJECT</h2>
 						{/* <LogoText className="scale-[0.8]" /> */}
-						<TabList className="flex">
+						<TabList className="size-full">
 							<Tab id={`/${projectId}/overview`}>
-								<LuLayoutGrid />
+								<BsBarChart />
 								<span>Overview</span>
 							</Tab>
 							<Tab id={`/${projectId}/events`}>
@@ -110,16 +91,15 @@ export default function Route() {
 								<LuSettings />
 								<span>Settings</span>
 							</Tab>
-							{/* <Tab id="/">
-								<LuLayers />
-								<span>Projects</span>
-							</Tab> */}
 						</TabList>
 					</Tabs>
+					<Tabs className="my-4 h-full">
+						<h2 className="mx-2 scale-90 text-xs font-extrabold text-neutral-400">WORKSPACES</h2>
+					</Tabs>
+					<User />
 				</div>
-				<User />
 			</nav>
 			<Outlet />
-		</>
+		</div>
 	);
 }

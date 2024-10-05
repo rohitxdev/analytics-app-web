@@ -96,3 +96,8 @@ body {
 :not(:active):focus-visible {
 	transition: outline-offset 200ms;
 }
+
+@font-face {
+	font-family: 'Satoshi';
+	src: url('/satoshi-variable.woff2') format('woff2');
+}
